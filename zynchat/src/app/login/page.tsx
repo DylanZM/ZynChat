@@ -1,0 +1,123 @@
+"use client"
+
+import React, { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,    
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+
+const formSchema = z.object({
+  email: z.string().min(1, { message: "Email or phone is required." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
+
+function LoginForm() {
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  function onSubmit(values: any) {
+    console.log(values);
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
+      <div className="w-full max-w-md rounded-xl bg-secondary p-8 shadow-lg">
+        <p className="mb-6 text-sm text-neutral-300">
+          Only login via email, Google, or +86 phone number login is supported in your region.
+        </p>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a1a1aa]">
+                        <Mail size={18} />
+                      </span>
+                      <Input
+                        type="text"
+                        placeholder="Phone number / email address"
+                        {...field}
+                        className="bg-[#1a1a1a] border border-[#525252] text-white pl-12 h-12 rounded-xl text-base focus:border-[#4e6bf5] focus:ring-2 focus:ring-[#4e6bf5]/60"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a1a1aa]">
+                        <Lock size={18} />
+                      </span>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        {...field}
+                        className="bg-[#1a1a1a] border border-[#525252] text-white pl-12 pr-12 h-12 rounded-xl text-base focus:border-[#4e6bf5] focus:ring-2 focus:ring-[#4e6bf5]/60"
+                      />
+                      <span
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#a1a1aa] cursor-pointer hover:text-white p-1 transition-colors"
+                        onClick={() => setShowPassword((v) => !v)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <p className="text-xs text-neutral-400">
+              By signing up or logging in, you consent to Zynchat's{" "}
+              <a href="#" className="underline">Terms of Use</a> and{" "}
+              <a href="#" className="underline">Privacy Policy</a>.
+            </p>
+            <Button
+              type="submit"
+              className="w-full bg-[#4e6bf5] hover:bg-[#3d56c5] text-white font-semibold text-lg rounded-xl h-12"
+            >
+              Log in
+            </Button>
+          </form>
+        </Form>
+        <div className="flex justify-between mt-4">
+          <a href="#" className="text-[#4e6bf5] hover:underline text-sm">Forgot password?</a>
+          <a href="/register" className="text-[#4e6bf5] hover:underline text-sm">Sign up</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Page() {
+  return <LoginForm />;
+}
