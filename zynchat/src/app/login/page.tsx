@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { Lock, User, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -14,9 +14,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { supabase } from "@/lib/supabase/supabase";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/context/UserContext";
 
 const formSchema = z.object({
-  email: z.string().min(1, { message: "Email or phone is required." }),
+  username: z.string().min(1, { message: "Username is required." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 
@@ -24,38 +27,76 @@ function LoginForm() {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const { setUser } = useUser();
 
-  function onSubmit(values: any) {
-    console.log(values);
+  async function onSubmit(values: any) {
+    // Buscar el usuario por username en la tabla users
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id, email, username, name")
+      .eq("username", values.username)
+      .single();
+
+    if (userError || !user) {
+      alert("Usuario no encontrado.");
+      return;
+    }
+
+    // Login con el email encontrado
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: values.password,
+    });
+
+    if (loginError) {
+      alert("Credenciales incorrectas o usuario no registrado.");
+      return;
+    }
+
+    setUser({
+      id: loginData.user.id,
+      email: loginData.user.email || "",
+      name: loginData.user.user_metadata?.name || user.username,
+    });
+
+    router.push("/chat");
   }
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
+      <div className="flex items-center justify-center mt-16 mb-14 w-full">
+        <span className="flex items-center">
+          <span className="text-8xl font-bold text-[#4f6ef7]">
+            ZynChat
+          </span>
+        </span>
+      </div>
       <div className="w-full max-w-md rounded-xl bg-secondary p-8 shadow-lg">
         <p className="mb-6 text-sm text-neutral-300">
-          Only login via email, Google, or +86 phone number login is supported in your region.
+          Login with your username and password.
         </p>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
-              name="email"
+              name="username"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#a1a1aa]">
-                        <Mail size={18} />
+                        <User size={18} />
                       </span>
                       <Input
                         type="text"
-                        placeholder="Phone number / email address"
+                        placeholder="Username"
                         {...field}
                         className="bg-[#1a1a1a] border border-[#525252] text-white pl-12 h-12 rounded-xl text-base focus:border-[#4e6bf5] focus:ring-2 focus:ring-[#4e6bf5]/60"
                       />
@@ -103,7 +144,9 @@ function LoginForm() {
             </p>
             <Button
               type="submit"
-              className="w-full bg-[#4e6bf5] hover:bg-[#3d56c5] text-white font-semibold text-lg rounded-xl h-12"
+              variant="default"
+              size="lg"
+              className="w-full rounded-xl font-semibold text-lg h-12 bg-[#4e6bf5] hover:bg-[#3d56c5] text-white"
             >
               Log in
             </Button>

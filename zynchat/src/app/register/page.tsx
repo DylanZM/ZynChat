@@ -9,21 +9,20 @@ import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,    
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import Image from "next/image";
+import { supabase } from "@/lib/supabase/supabase";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/context/UserContext";
 
 const formSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   confirmPassword: z.string().min(6, { message: "Confirm your password." }),
-  code: z.string().min(1, { message: "Code is required." }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match.",
   path: ["confirmPassword"],
@@ -37,24 +36,61 @@ function RegisterForm() {
       email: "",
       password: "",
       confirmPassword: "",
-      code: "",
     },
   });
 
-  // Estados para mostrar/ocultar contraseña
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const router = useRouter();
+  const { setUser } = useUser();
 
-  function onSubmit(values: any) {
-    console.log(values);
+  async function onSubmit(values: any) {
+    const { data, error } = await supabase.auth.signUp({
+      email: values.email,
+      password: values.password,
+      options: {
+        data: {
+          name: values.username,
+        },
+      },
+    });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    // Inserta en users si el usuario fue creado (sin importar la sesión)
+    if (data.user) {
+      const { error: insertError } = await supabase.from("users").insert([
+        {
+          id: data.user.id,
+          username: values.username,
+          email: values.email,
+          name: values.username,
+        },
+      ]);
+      if (insertError && !insertError.message.includes("duplicate key")) {
+        alert("Error guardando usuario en la base de datos: " + insertError.message);
+        return;
+      }
+
+      setUser({
+        id: data.user.id,
+        email: data.user.email ?? "",
+        name: data.user.user_metadata?.name || values.username,
+      });
+      router.push("/chat");
+    } else {
+      alert("No se pudo crear el usuario.");
+    }
   }
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
-      {/* Logo y texto juntos y grandes */}
       <div className="flex items-center justify-center mt-16 mb-14 w-full">
         <span className="flex items-center">
-          <span className="text-8xl font-bold text-[#4f6ef7]" >
+          <span className="text-8xl font-bold text-[#4f6ef7]">
             ZynChat
           </span>
         </span>
@@ -65,7 +101,6 @@ function RegisterForm() {
         </p>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            {/* Nuevo input para nombre de usuario */}
             <FormField
               control={form.control}
               name="username"
