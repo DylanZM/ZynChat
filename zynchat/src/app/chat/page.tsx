@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react";
-import { Send, User2, Search, Plus } from "lucide-react";
+import { Send, User2, Search, Plus, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabase/supabase";
 // Cambia la URL si tu backend está en otro host/puerto
 const SOCKET_URL = "http://localhost:3001";
 
-// Modal para añadir contacto real
+// Modal para añadir contacto escribiendo el nombre exacto
 function AddContactModal({
   open,
   onClose,
@@ -25,18 +25,31 @@ function AddContactModal({
   users: any[];
   friends: any[];
 }) {
-  const [search, setSearch] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const userFound = users.find(
+      (u) =>
+        u.name?.toLowerCase() === name.trim().toLowerCase() &&
+        !friends.some((f) => f.id === u.id)
+    );
+    if (!name.trim()) {
+      setError("El nombre es obligatorio");
+      return;
+    }
+    if (!userFound) {
+      setError("No existe un usuario con ese nombre o ya es tu amigo");
+      return;
+    }
+    onAdd({ id: userFound.id, name: userFound.name });
+    setName("");
+    setError("");
+    onClose();
+  }
 
   if (!open) return null;
-
-  // Filtra usuarios que no sean ya amigos
-  const filtered = users
-    .filter(
-      (u) =>
-        !friends.some((f) => f.id === u.id) &&
-        (u.name?.toLowerCase().includes(search.toLowerCase()) ||
-          u.email?.toLowerCase().includes(search.toLowerCase()))
-    );
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -49,26 +62,25 @@ function AddContactModal({
           ×
         </button>
         <h2 className="text-white text-xl font-bold mb-4">Añadir contacto</h2>
-        <Input
-          type="text"
-          placeholder="Buscar usuario..."
-          className="mb-3"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <div className="w-full max-h-60 overflow-y-auto">
-          {filtered.length === 0 && (
-            <div className="text-neutral-400 text-center">No hay resultados</div>
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
+          <input
+            type="text"
+            className="bg-primary text-white rounded-xl px-4 py-3 outline-none border border-[#232323]"
+            placeholder="Nombre exacto del usuario"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            autoFocus
+          />
+          {error && (
+            <span className="text-red-400 text-sm mb-2">{error}</span>
           )}
-          {filtered.map((u) => (
-            <div key={u.id} className="flex items-center justify-between mb-2">
-              <span className="text-white">{u.name || u.email}</span>
-              <Button size="sm" onClick={() => { onAdd(u); onClose(); }}>
-                Añadir
-              </Button>
-            </div>
-          ))}
-        </div>
+          <button
+            type="submit"
+            className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl py-2 font-semibold transition-colors"
+          >
+            Añadir
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -78,6 +90,8 @@ type Contact = {
   id: string;
   name: string;
   email?: string;
+  avatar_url?: string;
+  is_online?: boolean;
 };
 
 type Message = {
@@ -100,8 +114,23 @@ export default function ChatPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [search, setSearch] = useState<string>("");
   const [showAddContact, setShowAddContact] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
+
+  // Actualiza estado en línea al entrar/salir
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("users").update({ is_online: true }).eq("id", user.id);
+    const onUnload = () => {
+      supabase.from("users").update({ is_online: false, last_seen: new Date().toISOString() }).eq("id", user.id);
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => {
+      onUnload();
+      window.removeEventListener("beforeunload", onUnload);
+    };
+  }, [user]);
 
   // Conexión a Socket.IO
   useEffect(() => {
@@ -127,13 +156,13 @@ export default function ChatPage() {
     };
   }, [user]);
 
-  // Cargar amigos reales
+  // Cargar amigos reales (con avatar y estado)
   useEffect(() => {
     async function fetchFriends() {
       if (!user) return;
       const { data, error } = await supabase
         .from("friends")
-        .select("friend_id, friend:friend_id(name, email)")
+        .select("friend_id, friend:friend_id(name, email, avatar_url, is_online)")
         .eq("user_id", user.id);
 
       if (!error && data) {
@@ -141,6 +170,8 @@ export default function ChatPage() {
           id: f.friend_id,
           name: f.friend?.name,
           email: f.friend?.email,
+          avatar_url: f.friend?.avatar_url,
+          is_online: f.friend?.is_online,
         }));
         setContacts(friends);
         if (!selectedContact && friends.length > 0) setSelectedContact(friends[0]);
@@ -232,19 +263,22 @@ export default function ChatPage() {
   }
 
   function handleLogout() {
+    supabase.from("users").update({ is_online: false, last_seen: new Date().toISOString() }).eq("id", user.id);
     setUser(null);
     window.location.href = "/login";
   }
 
-  // Añadir amigo real (insertar en tabla friends)
+  // Añadir amigo real (insertar en tabla friends en ambos sentidos)
   async function handleAddContact(newContact: { id: string; name: string }) {
     if (!user) return;
     if (contacts.some(c => c.id === newContact.id)) {
       alert("Ya es tu amigo.");
       return;
     }
+    // Inserta la amistad en ambos sentidos
     const { error } = await supabase.from("friends").insert([
-      { user_id: user.id, friend_id: newContact.id }
+      { user_id: user.id, friend_id: newContact.id },
+      { user_id: newContact.id, friend_id: user.id }
     ]);
     if (!error) {
       setContacts([newContact, ...contacts]);
@@ -256,6 +290,28 @@ export default function ChatPage() {
     } else {
       alert("Error al añadir amigo: " + error.message);
     }
+  }
+
+  // Cambiar foto de perfil
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!user || !e.target.files || e.target.files.length === 0) return;
+    setAvatarUploading(true);
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user.id}/avatar.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+    if (uploadError) {
+      alert("Error al subir la imagen");
+      setAvatarUploading(false);
+      return;
+    }
+    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const avatarUrl = data.publicUrl;
+    await supabase.from("users").update({ avatar_url: avatarUrl }).eq("id", user.id);
+    setUser({ ...user, avatar_url: avatarUrl });
+    setAvatarUploading(false);
   }
 
   return (
@@ -301,8 +357,22 @@ export default function ChatPage() {
                 selectedContact?.id === contact.id ? "bg-[#232323]" : ""
               }`}
             >
-              <span className="bg-[#4f6ef7]/20 rounded-full p-2">
-                <User2 className="text-[#4f6ef7]" size={24} />
+              <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-10 h-10 flex items-center justify-center">
+                {contact.avatar_url ? (
+                  <img
+                    src={contact.avatar_url}
+                    alt={contact.name}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <User2 className="text-[#4f6ef7]" size={24} />
+                )}
+                <span
+                  className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
+                    contact.is_online ? "bg-green-500" : "bg-gray-400"
+                  }`}
+                  title={contact.is_online ? "En línea" : "Desconectado"}
+                />
               </span>
               <div className="flex-1">
                 <div className="flex justify-between items-center">
@@ -318,12 +388,28 @@ export default function ChatPage() {
         {/* Header del chat */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-[#232323] bg-secondary">
           <div className="flex items-center gap-3">
-            <span className="bg-[#4f6ef7]/20 rounded-full p-2">
-              <User2 className="text-[#4f6ef7]" size={28} />
+            <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-12 h-12 flex items-center justify-center">
+              {selectedContact?.avatar_url ? (
+                <img
+                  src={selectedContact.avatar_url}
+                  alt={selectedContact.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <User2 className="text-[#4f6ef7]" size={28} />
+              )}
+              <span
+                className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
+                  selectedContact?.is_online ? "bg-green-500" : "bg-gray-400"
+                }`}
+                title={selectedContact?.is_online ? "En línea" : "Desconectado"}
+              />
             </span>
             <div>
               <span className="text-white text-lg font-semibold">{selectedContact?.name || selectedContact?.email}</span>
-              <span className="block text-green-400 text-xs">En línea</span>
+              <span className={`block text-xs ${selectedContact?.is_online ? "text-green-400" : "text-gray-400"}`}>
+                {selectedContact?.is_online ? "En línea" : "Desconectado"}
+              </span>
             </div>
           </div>
           {/* Botón de perfil */}
@@ -388,8 +474,26 @@ export default function ChatPage() {
             >
               ×
             </button>
-            <div className="bg-[#4f6ef7]/20 rounded-full p-4 mb-3">
-              <User2 className="text-[#4f6ef7]" size={48} />
+            <div className="relative bg-[#4f6ef7]/20 rounded-full p-4 mb-3 w-24 h-24 flex items-center justify-center">
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.name}
+                  className="w-20 h-20 rounded-full object-cover"
+                />
+              ) : (
+                <User2 className="text-[#4f6ef7]" size={48} />
+              )}
+              <label className="absolute bottom-2 right-2 bg-[#4f6ef7] rounded-full p-1 cursor-pointer">
+                <Camera size={18} className="text-white" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                  disabled={avatarUploading}
+                />
+              </label>
             </div>
             <div className="text-white text-xl font-bold mb-1">{user?.name || user?.email}</div>
             <div className="text-green-400 text-sm mb-1">En línea</div>
