@@ -1,37 +1,42 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Send, User2, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
 import { Input } from "@/components/ui/input";
+import { io, Socket } from "socket.io-client";
+import { supabase } from "@/lib/supabase/supabase";
 
-// Modal para añadir contacto
+// Cambia la URL si tu backend está en otro host/puerto
+const SOCKET_URL = "http://localhost:3001";
+
+// Modal para añadir contacto real
 function AddContactModal({
   open,
   onClose,
   onAdd,
+  users,
+  friends,
 }: {
   open: boolean;
   onClose: () => void;
-  onAdd: (contact: { name: string }) => void;
+  onAdd: (contact: { id: string; name: string }) => void;
+  users: any[];
+  friends: any[];
 }) {
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError("El nombre es obligatorio");
-      return;
-    }
-    onAdd({ name: name.trim() });
-    setName("");
-    setError("");
-    onClose();
-  }
+  const [search, setSearch] = useState("");
 
   if (!open) return null;
+
+  // Filtra usuarios que no sean ya amigos
+  const filtered = users
+    .filter(
+      (u) =>
+        !friends.some((f) => f.id === u.id) &&
+        (u.name?.toLowerCase().includes(search.toLowerCase()) ||
+          u.email?.toLowerCase().includes(search.toLowerCase()))
+    );
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -44,37 +49,35 @@ function AddContactModal({
           ×
         </button>
         <h2 className="text-white text-xl font-bold mb-4">Añadir contacto</h2>
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
-          <input
-            type="text"
-            className="bg-primary text-white rounded-xl px-4 py-3 outline-none border border-[#232323]"
-            placeholder="Nombre del contacto"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            autoFocus
-          />
-          {error && (
-            <span className="text-red-400 text-sm mb-2">{error}</span>
+        <Input
+          type="text"
+          placeholder="Buscar usuario..."
+          className="mb-3"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <div className="w-full max-h-60 overflow-y-auto">
+          {filtered.length === 0 && (
+            <div className="text-neutral-400 text-center">No hay resultados</div>
           )}
-          <button
-            type="submit"
-            className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl py-2 font-semibold transition-colors"
-          >
-            Añadir
-          </button>
-        </form>
+          {filtered.map((u) => (
+            <div key={u.id} className="flex items-center justify-between mb-2">
+              <span className="text-white">{u.name || u.email}</span>
+              <Button size="sm" onClick={() => { onAdd(u); onClose(); }}>
+                Añadir
+              </Button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 type Contact = {
-  id: number;
+  id: string;
   name: string;
-  lastMessage: string;
-  lastTime: string;
-  unread?: number;
-  typing?: boolean;
+  email?: string;
 };
 
 type Message = {
@@ -84,58 +87,145 @@ type Message = {
 };
 
 type MessagesByContact = {
-  [contactId: number]: Message[];
-};
-
-const initialContacts: Contact[] = [
-  { id: 1, name: "María García", lastMessage: "Hola! ¿Cómo estás?", lastTime: "10:33", unread: 2 },
-  { id: 2, name: "Equipo Desarrollo", lastMessage: "La nueva feature está lista para revisar", lastTime: "09:42" },
-  { id: 3, name: "Carlos Ruiz", lastMessage: "Escribiendo...", lastTime: "Ayer", typing: true },
-  { id: 4, name: "Ana López", lastMessage: "👍", lastTime: "Ayer" },
-];
-
-const initialMessages: MessagesByContact = {
-  1: [
-    { fromMe: false, text: "Hola! ¿Cómo estás?", time: "10:30" },
-    { fromMe: false, text: "Muy bien también. ¿Tienes tiempo para revisar el proyecto?", time: "10:33" },
-    { fromMe: true, text: "¡Hola María! Todo bien, gracias. ¿Y tú qué tal?", time: "10:32" },
-    { fromMe: true, text: "Claro, déjame revisarlo y te comento en unos minutos", time: "10:35" },
-  ],
-  2: [
-    { fromMe: false, text: "La nueva feature está lista para revisar", time: "09:42" },
-  ],
-  3: [
-    { fromMe: false, text: "Escribiendo...", time: "Ayer" },
-  ],
-  4: [
-    { fromMe: false, text: "👍", time: "Ayer" },
-  ],
+  [contactId: string]: Message[];
 };
 
 export default function ChatPage() {
   const { user, setUser } = useUser();
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts);
-  const [selectedContact, setSelectedContact] = useState<Contact>(initialContacts[0]);
-  const [allMessages, setAllMessages] = useState<MessagesByContact>(initialMessages);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [allUsers, setAllUsers] = useState<Contact[]>([]);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [allMessages, setAllMessages] = useState<MessagesByContact>({});
   const [input, setInput] = useState<string>("");
   const [showProfile, setShowProfile] = useState(false);
   const [search, setSearch] = useState<string>("");
   const [showAddContact, setShowAddContact] = useState(false);
 
+  const socketRef = useRef<Socket | null>(null);
+
+  // Conexión a Socket.IO
+  useEffect(() => {
+    if (!user) return;
+    const socket = io(SOCKET_URL, {
+      query: { userId: user.id }
+    });
+    socketRef.current = socket;
+
+    // Recibir mensajes en tiempo real
+    socket.on("receive_message", (msg: any) => {
+      setAllMessages((prev) => ({
+        ...prev,
+        [msg.senderId]: [
+          ...(prev[msg.senderId] || []),
+          { fromMe: false, text: msg.text, time: msg.time },
+        ],
+      }));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
+
+  // Cargar amigos reales
+  useEffect(() => {
+    async function fetchFriends() {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("friends")
+        .select("friend_id, friend:friend_id(name, email)")
+        .eq("user_id", user.id);
+
+      if (!error && data) {
+        const friends = data.map((f: any) => ({
+          id: f.friend_id,
+          name: f.friend?.name,
+          email: f.friend?.email,
+        }));
+        setContacts(friends);
+        if (!selectedContact && friends.length > 0) setSelectedContact(friends[0]);
+      }
+    }
+    fetchFriends();
+    // eslint-disable-next-line
+  }, [user]);
+
+  // Cargar todos los usuarios para buscador/agregar
+  useEffect(() => {
+    async function fetchAllUsers() {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .neq("id", user.id);
+      if (!error && data) setAllUsers(data);
+    }
+    fetchAllUsers();
+  }, [user]);
+
+  // Cargar mensajes de la base de datos
+  useEffect(() => {
+    async function fetchMessages() {
+      if (!user || !selectedContact) return;
+      const { data, error } = await supabase
+        .from("messages")
+        .select("sender_id, receiver_id, content, created_at")
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.id}),and(sender_id.eq.${selectedContact.id},receiver_id.eq.${user.id})`)
+        .order("created_at", { ascending: true });
+
+      if (!error && data) {
+        const msgs: Message[] = data.map((msg: any) => ({
+          fromMe: msg.sender_id === user.id,
+          text: msg.content,
+          time: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        }));
+        setAllMessages((prev) => ({
+          ...prev,
+          [selectedContact.id]: msgs,
+        }));
+      }
+    }
+    fetchMessages();
+    // eslint-disable-next-line
+  }, [user, selectedContact]);
+
   const filteredContacts = contacts.filter((contact) =>
-    contact.name.toLowerCase().includes(search.toLowerCase())
+    (contact.name || contact.email || "")
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
-  const messages: Message[] = allMessages[selectedContact.id] || [];
+  const messages: Message[] = selectedContact ? allMessages[selectedContact.id] || [] : [];
 
-  function handleSend(e: React.FormEvent) {
+  // Enviar mensaje usando Socket.IO y guardar en Supabase
+  async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !user || !selectedContact) return;
+
+    const msg = {
+      senderId: user.id,
+      receiverId: selectedContact.id,
+      text: input,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    // Enviar por socket
+    socketRef.current?.emit("send_message", msg);
+
+    // Guardar en Supabase
+    await supabase.from("messages").insert([
+      {
+        sender_id: user.id,
+        receiver_id: selectedContact.id,
+        content: input,
+      }
+    ]);
+
     setAllMessages((prev) => ({
       ...prev,
       [selectedContact.id]: [
         ...(prev[selectedContact.id] || []),
-        { fromMe: true, text: input, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
+        { fromMe: true, text: input, time: msg.time },
       ],
     }));
     setInput("");
@@ -146,32 +236,33 @@ export default function ChatPage() {
     window.location.href = "/login";
   }
 
-  function handleAddContact(newContact: { name: string }) {
-    const id = contacts.length
-      ? Math.max(...contacts.map(c => c.id)) + 1
-      : 1;
-    const contact: Contact = {
-      id,
-      name: newContact.name,
-      lastMessage: "",
-      lastTime: "Ahora",
-    };
-    setContacts([contact, ...contacts]);
-    setAllMessages((prev) => ({
-      ...prev,
-      [id]: [],
-    }));
-    setSelectedContact(contact);
+  // Añadir amigo real (insertar en tabla friends)
+  async function handleAddContact(newContact: { id: string; name: string }) {
+    if (!user) return;
+    if (contacts.some(c => c.id === newContact.id)) {
+      alert("Ya es tu amigo.");
+      return;
+    }
+    const { error } = await supabase.from("friends").insert([
+      { user_id: user.id, friend_id: newContact.id }
+    ]);
+    if (!error) {
+      setContacts([newContact, ...contacts]);
+      setAllMessages((prev) => ({
+        ...prev,
+        [newContact.id]: [],
+      }));
+      setSelectedContact(newContact);
+    } else {
+      alert("Error al añadir amigo: " + error.message);
+    }
   }
 
   return (
     <div className="flex min-h-screen bg-primary">
       {/* Sidebar */}
       <aside className="w-80 h-screen bg-secondary border-r border-[#232323] flex flex-col">
-        {/* Tabs */}
         <span className="text-white font-bold text-2xl mb-4 select-none ml-4 mt-4">Chats</span>
-
-        {/* Conversaciones */}
         <div className="px-6 pt-2 pb-2">
           <span className="text-base font-semibold text-white">Contactos</span>
         </div>
@@ -207,7 +298,7 @@ export default function ChatPage() {
               key={contact.id}
               onClick={() => setSelectedContact(contact)}
               className={`w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-[#232323] transition-colors ${
-                selectedContact.id === contact.id ? "bg-[#232323]" : ""
+                selectedContact?.id === contact.id ? "bg-[#232323]" : ""
               }`}
             >
               <span className="bg-[#4f6ef7]/20 rounded-full p-2">
@@ -215,16 +306,7 @@ export default function ChatPage() {
               </span>
               <div className="flex-1">
                 <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">{contact.name}</span>
-                  <span className="text-xs text-[#a1a1aa]">{contact.lastTime}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className={`text-xs ${contact.typing ? "text-[#4f6ef7] italic" : "text-neutral-400"}`}>
-                    {contact.typing ? "Escribiendo..." : contact.lastMessage}
-                  </span>
-                  {contact.unread && (
-                    <span className="ml-2 bg-[#4f6ef7] text-white text-xs rounded-full px-2 py-0.5">{contact.unread}</span>
-                  )}
+                  <span className="text-white font-medium">{contact.name || contact.email}</span>
                 </div>
               </div>
             </button>
@@ -240,11 +322,11 @@ export default function ChatPage() {
               <User2 className="text-[#4f6ef7]" size={28} />
             </span>
             <div>
-              <span className="text-white text-lg font-semibold">{selectedContact.name}</span>
+              <span className="text-white text-lg font-semibold">{selectedContact?.name || selectedContact?.email}</span>
               <span className="block text-green-400 text-xs">En línea</span>
             </div>
           </div>
-          {/* Botón de perfil arriba a la derecha */}
+          {/* Botón de perfil */}
           <button
             className="bg-[#4f6ef7]/20 rounded-full p-2 hover:bg-[#4f6ef7]/40 transition-colors"
             onClick={() => setShowProfile(true)}
@@ -315,8 +397,7 @@ export default function ChatPage() {
             <Button
               variant="default"
               className="w-full"
-              onClick={() => alert("Editar perfil (aquí iría la lógica real)")}
-            >
+              onClick={() => alert("Editar perfil (aquí iría la lógica real)")}>
               Editar perfil
             </Button>
             <Button
@@ -334,6 +415,8 @@ export default function ChatPage() {
         open={showAddContact}
         onClose={() => setShowAddContact(false)}
         onAdd={handleAddContact}
+        users={allUsers}
+        friends={contacts}
       />
     </div>
   );
