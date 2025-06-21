@@ -384,7 +384,7 @@ export default function ChatPage() {
         </div>
       </aside>
       {/* Chat principal */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col h-screen">
         {/* Header del chat */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-[#232323] bg-secondary">
           <div className="flex items-center gap-3">
