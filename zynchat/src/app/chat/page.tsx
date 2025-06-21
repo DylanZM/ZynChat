@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input";
 import { io, Socket } from "socket.io-client";
 import { supabase } from "@/lib/supabase/supabase";
 
-// Cambia la URL si tu backend está en otro host/puerto
+// Change the URL if your backend is on another host/port
 const SOCKET_URL = "http://localhost:3001";
 
-// Modal para añadir contacto escribiendo el nombre exacto
+// Modal to add a contact by typing the exact name
 function AddContactModal({
   open,
   onClose,
@@ -36,11 +36,11 @@ function AddContactModal({
         !friends.some((f) => f.id === u.id)
     );
     if (!name.trim()) {
-      setError("El nombre es obligatorio");
+      setError("Name is required");
       return;
     }
     if (!userFound) {
-      setError("No existe un usuario con ese nombre o ya es tu amigo");
+      setError("A user with that name does not exist or is already your friend");
       return;
     }
     onAdd({ id: userFound.id, name: userFound.name });
@@ -57,16 +57,16 @@ function AddContactModal({
         <button
           className="absolute top-2 right-3 text-white text-2xl"
           onClick={onClose}
-          aria-label="Cerrar"
+          aria-label="Close"
         >
           ×
         </button>
-        <h2 className="text-white text-xl font-bold mb-4">Añadir contacto</h2>
+        <h2 className="text-white text-xl font-bold mb-4">Add Contact</h2>
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
           <input
             type="text"
             className="bg-primary text-white rounded-xl px-4 py-3 outline-none border border-[#232323]"
-            placeholder="Nombre exacto del usuario"
+            placeholder="Exact username"
             value={name}
             onChange={e => setName(e.target.value)}
             autoFocus
@@ -78,7 +78,7 @@ function AddContactModal({
             type="submit"
             className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl py-2 font-semibold transition-colors"
           >
-            Añadir
+            Add
           </button>
         </form>
       </div>
@@ -118,7 +118,7 @@ export default function ChatPage() {
 
   const socketRef = useRef<Socket | null>(null);
 
-  // Actualiza estado en línea al entrar/salir
+  // Update online status on login/logout
   useEffect(() => {
     if (!user) return;
     supabase.from("users").update({ is_online: true }).eq("id", user.id);
@@ -132,7 +132,7 @@ export default function ChatPage() {
     };
   }, [user]);
 
-  // Conexión a Socket.IO
+  // Socket.IO connection
   useEffect(() => {
     if (!user) return;
     const socket = io(SOCKET_URL, {
@@ -140,7 +140,7 @@ export default function ChatPage() {
     });
     socketRef.current = socket;
 
-    // Recibir mensajes en tiempo real
+    // Receive real-time messages
     socket.on("receive_message", (msg: any) => {
       setAllMessages((prev) => ({
         ...prev,
@@ -156,7 +156,7 @@ export default function ChatPage() {
     };
   }, [user]);
 
-  // Cargar amigos reales (con avatar y estado)
+  // Load real friends (with avatar and status)
   useEffect(() => {
     async function fetchFriends() {
       if (!user) return;
@@ -181,7 +181,7 @@ export default function ChatPage() {
     // eslint-disable-next-line
   }, [user]);
 
-  // Cargar todos los usuarios para buscador/agregar
+  // Load all users for search/add
   useEffect(() => {
     async function fetchAllUsers() {
       if (!user) return;
@@ -194,7 +194,7 @@ export default function ChatPage() {
     fetchAllUsers();
   }, [user]);
 
-  // Cargar mensajes de la base de datos
+  // Load messages from the database
   useEffect(() => {
     async function fetchMessages() {
       if (!user || !selectedContact) return;
@@ -228,7 +228,7 @@ export default function ChatPage() {
 
   const messages: Message[] = selectedContact ? allMessages[selectedContact.id] || [] : [];
 
-  // Enviar mensaje usando Socket.IO y guardar en Supabase
+  // Send message using Socket.IO and save to Supabase
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || !user || !selectedContact) return;
@@ -268,14 +268,14 @@ export default function ChatPage() {
     window.location.href = "/login";
   }
 
-  // Añadir amigo real (insertar en tabla friends en ambos sentidos)
+  // Add real friend (insert into friends table both ways)
   async function handleAddContact(newContact: { id: string; name: string }) {
     if (!user) return;
     if (contacts.some(c => c.id === newContact.id)) {
-      alert("Ya es tu amigo.");
+      alert("This user is already your friend.");
       return;
     }
-    // Inserta la amistad en ambos sentidos
+    // Insert friendship both ways
     const { error } = await supabase.from("friends").insert([
       { user_id: user.id, friend_id: newContact.id },
       { user_id: newContact.id, friend_id: user.id }
@@ -288,11 +288,11 @@ export default function ChatPage() {
       }));
       setSelectedContact(newContact);
     } else {
-      alert("Error al añadir amigo: " + error.message);
+      alert("Error adding friend: " + error.message);
     }
   }
 
-  // Cambiar foto de perfil
+  // Change profile picture
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!user || !e.target.files || e.target.files.length === 0) return;
     setAvatarUploading(true);
@@ -303,7 +303,7 @@ export default function ChatPage() {
       .from("avatars")
       .upload(filePath, file, { upsert: true });
     if (uploadError) {
-      alert("Error al subir la imagen");
+      alert("Error uploading image");
       setAvatarUploading(false);
       return;
     }
@@ -320,9 +320,9 @@ export default function ChatPage() {
       <aside className="w-80 h-screen bg-secondary border-r border-[#232323] flex flex-col">
         <span className="text-white font-bold text-2xl mb-4 select-none ml-4 mt-4">Chats</span>
         <div className="px-6 pt-2 pb-2">
-          <span className="text-base font-semibold text-white">Contactos</span>
+          <span className="text-base font-semibold text-white">Contacts</span>
         </div>
-        {/* Buscador y botón Plus */}
+        {/* Search and Plus button */}
         <div className="px-6 pb-2 flex items-center gap-2">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]">
@@ -330,7 +330,7 @@ export default function ChatPage() {
             </span>
             <Input
               type="text"
-              placeholder="Buscar un chat o iniciar uno nuevo"
+              placeholder="Search or start a new chat"
               className="pl-10 h-8 text-base text-white"
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -340,14 +340,14 @@ export default function ChatPage() {
             type="button"
             className="ml-1 text-[#4f6ef7] hover:bg-[#232323] rounded-full p-2 transition-colors"
             onClick={() => setShowAddContact(true)}
-            aria-label="Añadir contacto"
+            aria-label="Add contact"
           >
             <Plus size={22} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
           {filteredContacts.length === 0 && (
-            <div className="text-neutral-400 text-center mt-8">No hay resultados</div>
+            <div className="text-neutral-400 text-center mt-8">No results</div>
           )}
           {filteredContacts.map((contact) => (
             <button
@@ -371,7 +371,7 @@ export default function ChatPage() {
                   className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
                     contact.is_online ? "bg-green-500" : "bg-gray-400"
                   }`}
-                  title={contact.is_online ? "En línea" : "Desconectado"}
+                  title={contact.is_online ? "Online" : "Offline"}
                 />
               </span>
               <div className="flex-1">
@@ -383,9 +383,9 @@ export default function ChatPage() {
           ))}
         </div>
       </aside>
-      {/* Chat principal */}
+      {/* Main chat */}
       <main className="flex-1 flex flex-col h-screen">
-        {/* Header del chat */}
+        {/* Chat header */}
         <div className="flex items-center justify-between px-8 py-5 border-b border-[#232323] bg-secondary">
           <div className="flex items-center gap-3">
             <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-12 h-12 flex items-center justify-center">
@@ -402,26 +402,26 @@ export default function ChatPage() {
                 className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
                   selectedContact?.is_online ? "bg-green-500" : "bg-gray-400"
                 }`}
-                title={selectedContact?.is_online ? "En línea" : "Desconectado"}
+                title={selectedContact?.is_online ? "Online" : "Offline"}
               />
             </span>
             <div>
               <span className="text-white text-lg font-semibold">{selectedContact?.name || selectedContact?.email}</span>
               <span className={`block text-xs ${selectedContact?.is_online ? "text-green-400" : "text-gray-400"}`}>
-                {selectedContact?.is_online ? "En línea" : "Desconectado"}
+                {selectedContact?.is_online ? "Online" : "Offline"}
               </span>
             </div>
           </div>
-          {/* Botón de perfil */}
+          {/* Profile button */}
           <button
             className="bg-[#4f6ef7]/20 rounded-full p-2 hover:bg-[#4f6ef7]/40 transition-colors"
             onClick={() => setShowProfile(true)}
-            aria-label="Perfil"
+            aria-label="Profile"
           >
             <User2 className="text-[#4f6ef7]" size={28} />
           </button>
         </div>
-        {/* Mensajes */}
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-3 bg-primary">
           {messages.map((msg: Message, idx: number) => (
             <div
@@ -441,7 +441,7 @@ export default function ChatPage() {
             </div>
           ))}
         </div>
-        {/* Input para enviar mensajes */}
+        {/* Message input */}
         <form
           onSubmit={handleSend}
           className="flex items-center gap-3 px-8 py-5 border-t border-[#232323] bg-secondary"
@@ -450,27 +450,27 @@ export default function ChatPage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribe un mensaje..."
+            placeholder="Type a message..."
             className="flex-1 bg-primary text-white rounded-xl px-4 py-3 outline-none border-none"
             autoComplete="off"
           />
           <Button
             type="submit"
             className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl p-3 transition-colors"
-            aria-label="Enviar"
+            aria-label="Send"
           >
             <Send size={20} />
           </Button>
         </form>
       </main>
-      {/* Modal de perfil */}
+      {/* Profile modal */}
       {showProfile && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-secondary rounded-xl p-8 min-w-[320px] flex flex-col items-center relative">
             <button
               className="absolute top-2 right-3 text-white text-2xl"
               onClick={() => setShowProfile(false)}
-              aria-label="Cerrar"
+              aria-label="Close"
             >
               ×
             </button>
@@ -496,25 +496,25 @@ export default function ChatPage() {
               </label>
             </div>
             <div className="text-white text-xl font-bold mb-1">{user?.name || user?.email}</div>
-            <div className="text-green-400 text-sm mb-1">En línea</div>
+            <div className="text-green-400 text-sm mb-1">Online</div>
             <div className="text-neutral-400 text-sm mb-4">{user?.email}</div>
             <Button
               variant="default"
               className="w-full"
-              onClick={() => alert("Editar perfil (aquí iría la lógica real)")}>
-              Editar perfil
+              onClick={() => alert("Edit profile (actual logic would go here)")}>
+              Edit profile
             </Button>
             <Button
               variant="destructive"
               className="w-full mt-3 bg-red-600 hover:bg-red-700 text-white font-semibold"
               onClick={handleLogout}
             >
-              Cerrar sesión
+              Log out
             </Button>
           </div>
         </div>
       )}
-      {/* Modal para añadir contacto */}
+      {/* Add contact modal */}
       <AddContactModal
         open={showAddContact}
         onClose={() => setShowAddContact(false)}

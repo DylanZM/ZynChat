@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
+import Link from "next/link";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Username is required." }),
@@ -152,9 +153,17 @@ function LoginForm() {
             </Button>
           </form>
         </Form>
-        <div className="flex justify-between mt-4">
-          <a href="#" className="text-[#4e6bf5] hover:underline text-sm">Forgot password?</a>
-          <a href="/register" className="text-[#4e6bf5] hover:underline text-sm">Sign up</a>
+        <div className="flex justify-between items-center mt-6">
+          <Link href="/forgot-password" legacyBehavior>
+            <a className="text-[#4e6bf5] hover:underline text-sm">
+              Forgot password?
+            </a>
+          </Link>
+          <Link href="/register" legacyBehavior>
+            <a className="text-[#4e6bf5] hover:underline text-sm">
+              Don't have an account? Sign up
+            </a>
+          </Link>
         </div>
       </div>
     </div>
