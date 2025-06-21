@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react";
-import { Send, User2, Search, Plus, Camera } from "lucide-react";
+import { Send, User2, Search, Plus, Camera, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
 import { Input } from "@/components/ui/input";
@@ -86,6 +86,71 @@ function AddContactModal({
   );
 }
 
+// Modal to edit profile
+function EditProfileModal({
+  open,
+  onClose,
+  onSave,
+  currentUser,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSave: (newName: string) => Promise<void>;
+  currentUser: any;
+}) {
+  const [name, setName] = useState(currentUser?.name || "");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError("Name cannot be empty.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    await onSave(name);
+    setLoading(false);
+    onClose();
+  }
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-secondary rounded-xl p-8 min-w-[320px] flex flex-col items-center relative shadow-xl">
+        <button
+          className="absolute top-2 right-3 text-white/70 text-2xl hover:text-white"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <h2 className="text-white text-xl font-bold mb-4">Edit Profile</h2>
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
+          <input
+            type="text"
+            className="bg-primary text-white rounded-xl px-4 py-3 outline-none border-none focus:ring-2 focus:ring-[#4f6ef7]"
+            placeholder="Enter your new name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+          />
+          {error && <span className="text-red-400 text-sm mb-2">{error}</span>}
+          <button
+            type="submit"
+            className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl py-2 font-semibold transition-colors"
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 type Contact = {
   id: string;
   name: string;
@@ -114,6 +179,8 @@ export default function ChatPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [search, setSearch] = useState<string>("");
   const [showAddContact, setShowAddContact] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
@@ -292,6 +359,25 @@ export default function ChatPage() {
     }
   }
 
+  // Update username
+  async function handleUpdateUsername(newName: string) {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("users")
+      .update({ name: newName })
+      .eq("id", user.id)
+      .select()
+      .single();
+
+    if (error) {
+      alert("Error updating name: " + error.message);
+    } else if (data) {
+      const updatedUser = { ...user, name: data.name };
+      setUser(updatedUser);
+    }
+  }
+
   // Change profile picture
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!user || !e.target.files || e.target.files.length === 0) return;
@@ -317,151 +403,201 @@ export default function ChatPage() {
   return (
     <div className="flex min-h-screen bg-primary">
       {/* Sidebar */}
-      <aside className="w-80 h-screen bg-secondary border-r border-[#232323] flex flex-col">
-        <span className="text-white font-bold text-2xl mb-4 select-none ml-4 mt-4">Chats</span>
-        <div className="px-6 pt-2 pb-2">
-          <span className="text-base font-semibold text-white">Contacts</span>
-        </div>
-        {/* Search and Plus button */}
-        <div className="px-6 pb-2 flex items-center gap-2">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]">
-              <Search size={18} />
-            </span>
-            <Input
-              type="text"
-              placeholder="Search or start a new chat"
-              className="pl-10 h-8 text-base text-white"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
+      <aside
+        className={`h-screen bg-secondary border-r border-[#232323] flex flex-col transition-all duration-300 ease-in-out ${
+          sidebarOpen ? "w-80" : "w-0"
+        }`}
+      >
+        <div
+          className={`overflow-hidden h-full flex flex-col transition-opacity ${
+            sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <span className="text-white font-bold text-2xl mb-4 select-none ml-4 mt-4">
+            Chats
+          </span>
+          <div className="px-6 pt-2 pb-2">
+            <span className="text-base font-semibold text-white">Contacts</span>
           </div>
-          <button
-            type="button"
-            className="ml-1 text-[#4f6ef7] hover:bg-[#232323] rounded-full p-2 transition-colors"
-            onClick={() => setShowAddContact(true)}
-            aria-label="Add contact"
-          >
-            <Plus size={22} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {filteredContacts.length === 0 && (
-            <div className="text-neutral-400 text-center mt-8">No results</div>
-          )}
-          {filteredContacts.map((contact) => (
-            <button
-              key={contact.id}
-              onClick={() => setSelectedContact(contact)}
-              className={`w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-[#232323] transition-colors ${
-                selectedContact?.id === contact.id ? "bg-[#232323]" : ""
-              }`}
-            >
-              <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-10 h-10 flex items-center justify-center">
-                {contact.avatar_url ? (
-                  <img
-                    src={contact.avatar_url}
-                    alt={contact.name}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <User2 className="text-[#4f6ef7]" size={24} />
-                )}
-                <span
-                  className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
-                    contact.is_online ? "bg-green-500" : "bg-gray-400"
-                  }`}
-                  title={contact.is_online ? "Online" : "Offline"}
-                />
+          {/* Search and Plus button */}
+          <div className="px-6 pb-2 flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]">
+                <Search size={18} />
               </span>
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">{contact.name || contact.email}</span>
-                </div>
-              </div>
+              <Input
+                type="text"
+                placeholder="Search or start a new chat"
+                className="pl-10 h-8 text-base text-white"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="ml-1 text-[#4f6ef7] hover:bg-[#232323] rounded-full p-2 transition-colors"
+              onClick={() => setShowAddContact(true)}
+              aria-label="Add contact"
+            >
+              <Plus size={22} />
             </button>
-          ))}
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {filteredContacts.length === 0 && (
+              <div className="text-neutral-400 text-center mt-8">No results</div>
+            )}
+            {filteredContacts.map((contact) => (
+              <button
+                key={contact.id}
+                onClick={() => setSelectedContact(contact)}
+                className={`w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-[#232323] transition-colors ${
+                  selectedContact?.id === contact.id ? "bg-[#232323]" : ""
+                }`}
+              >
+                <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-10 h-10 flex items-center justify-center">
+                  {contact.avatar_url ? (
+                    <img
+                      src={contact.avatar_url}
+                      alt={contact.name}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User2 className="text-[#4f6ef7]" size={24} />
+                  )}
+                  <span
+                    className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
+                      contact.is_online ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                    title={contact.is_online ? "Online" : "Offline"}
+                  />
+                </span>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-medium">{contact.name || contact.email}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </aside>
       {/* Main chat */}
-      <main className="flex-1 flex flex-col h-screen">
-        {/* Chat header */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-[#232323] bg-secondary">
-          <div className="flex items-center gap-3">
-            <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-12 h-12 flex items-center justify-center">
-              {selectedContact?.avatar_url ? (
-                <img
-                  src={selectedContact.avatar_url}
-                  alt={selectedContact.name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <User2 className="text-[#4f6ef7]" size={28} />
-              )}
-              <span
-                className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
-                  selectedContact?.is_online ? "bg-green-500" : "bg-gray-400"
-                }`}
-                title={selectedContact?.is_online ? "Online" : "Offline"}
-              />
-            </span>
-            <div>
-              <span className="text-white text-lg font-semibold">{selectedContact?.name || selectedContact?.email}</span>
-              <span className={`block text-xs ${selectedContact?.is_online ? "text-green-400" : "text-gray-400"}`}>
-                {selectedContact?.is_online ? "Online" : "Offline"}
-              </span>
-            </div>
-          </div>
-          {/* Profile button */}
-          <button
-            className="bg-[#4f6ef7]/20 rounded-full p-2 hover:bg-[#4f6ef7]/40 transition-colors"
-            onClick={() => setShowProfile(true)}
-            aria-label="Profile"
-          >
-            <User2 className="text-[#4f6ef7]" size={28} />
-          </button>
-        </div>
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-3 bg-primary">
-          {messages.map((msg: Message, idx: number) => (
-            <div
-              key={idx}
-              className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`px-4 py-2 rounded-2xl max-w-xs ${
-                  msg.fromMe
-                    ? "bg-[#4f6ef7] text-white rounded-br-sm"
-                    : "bg-[#232323] text-neutral-200 rounded-bl-sm"
-                }`}
-              >
-                <div>{msg.text}</div>
-                <div className="text-xs text-right mt-1 opacity-60">{msg.time}</div>
+      <main className="flex-1 flex flex-col h-screen relative">
+        {selectedContact ? (
+          <>
+            {/* Chat header */}
+            <div className="flex items-center justify-between px-8 py-5 border-b border-[#232323] bg-secondary">
+              <div className="flex items-center gap-3">
+                <button
+                  className="text-white p-1 rounded-full hover:bg-white/10"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                >
+                  <Menu size={24} />
+                </button>
+                <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-12 h-12 flex items-center justify-center">
+                  {selectedContact?.avatar_url ? (
+                    <img
+                      src={selectedContact.avatar_url}
+                      alt={selectedContact.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User2 className="text-[#4f6ef7]" size={28} />
+                  )}
+                  <span
+                    className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
+                      selectedContact?.is_online ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                    title={selectedContact?.is_online ? "Online" : "Offline"}
+                  />
+                </span>
+                <div>
+                  <span className="text-white text-lg font-semibold">{selectedContact?.name || selectedContact?.email}</span>
+                  <span className={`block text-xs ${selectedContact?.is_online ? "text-green-400" : "text-gray-400"}`}>
+                    {selectedContact?.is_online ? "Online" : "Offline"}
+                  </span>
+                </div>
               </div>
+              {/* Profile button */}
+              <button
+                className="bg-[#4f6ef7]/20 rounded-full p-2 hover:bg-[#4f6ef7]/40 transition-colors"
+                onClick={() => {
+                  setShowProfile(true);
+                  setShowEditProfile(false);
+                }}
+                aria-label="Profile"
+              >
+                <User2 className="text-[#4f6ef7]" size={28} />
+              </button>
             </div>
-          ))}
-        </div>
-        {/* Message input */}
-        <form
-          onSubmit={handleSend}
-          className="flex items-center gap-3 px-8 py-5 border-t border-[#232323] bg-secondary"
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 bg-primary text-white rounded-xl px-4 py-3 outline-none border-none"
-            autoComplete="off"
-          />
-          <Button
-            type="submit"
-            className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl p-3 transition-colors"
-            aria-label="Send"
-          >
-            <Send size={20} />
-          </Button>
-        </form>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-3 bg-primary">
+              {messages.length > 0 ? (
+                messages.map((msg: Message, idx: number) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`px-4 py-2 rounded-2xl max-w-xs ${
+                        msg.fromMe
+                          ? "bg-[#4f6ef7] text-white rounded-br-sm"
+                          : "bg-[#232323] text-neutral-200 rounded-bl-sm"
+                      }`}
+                    >
+                      <div>{msg.text}</div>
+                      <div className="text-xs text-right mt-1 opacity-60">{msg.time}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-neutral-400">
+                  <div className="p-6 bg-secondary rounded-2xl shadow-lg">
+                    <p className="text-base">
+                      This is the beginning of your conversation with
+                    </p>
+                    <p className="font-semibold text-white text-lg mt-1">
+                      {selectedContact?.name}.
+                    </p>
+                    <p className="mt-3 text-sm">
+                      Send a message to start chatting!
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Message input */}
+            <form
+              onSubmit={handleSend}
+              className="flex items-center gap-3 px-8 py-5 border-t border-[#232323] bg-secondary"
+            >
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 bg-primary text-white rounded-xl px-4 py-3 outline-none border-none"
+                autoComplete="off"
+              />
+              <Button
+                type="submit"
+                className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl p-3 transition-colors"
+                aria-label="Send"
+              >
+                <Send size={20} />
+              </Button>
+            </form>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center bg-primary text-white p-4">
+            <button
+              className="absolute top-5 left-8 text-white p-1 rounded-full hover:bg-white/10"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu size={24} />
+            </button>
+          </div>
+        )}
       </main>
       {/* Profile modal */}
       {showProfile && (
@@ -469,7 +605,10 @@ export default function ChatPage() {
           <div className="bg-secondary rounded-xl p-8 min-w-[320px] flex flex-col items-center relative">
             <button
               className="absolute top-2 right-3 text-white text-2xl"
-              onClick={() => setShowProfile(false)}
+              onClick={() => {
+                setShowProfile(false);
+                setShowEditProfile(false);
+              }}
               aria-label="Close"
             >
               ×
@@ -501,7 +640,11 @@ export default function ChatPage() {
             <Button
               variant="default"
               className="w-full"
-              onClick={() => alert("Edit profile (actual logic would go here)")}>
+              onClick={() => {
+                setShowProfile(false);
+                setShowEditProfile(true);
+              }}
+            >
               Edit profile
             </Button>
             <Button
@@ -521,6 +664,12 @@ export default function ChatPage() {
         onAdd={handleAddContact}
         users={allUsers}
         friends={contacts}
+      />
+      <EditProfileModal
+        open={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        onSave={handleUpdateUsername}
+        currentUser={user}
       />
     </div>
   );
