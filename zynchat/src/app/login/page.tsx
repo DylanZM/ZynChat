@@ -154,15 +154,17 @@ function LoginForm() {
           </form>
         </Form>
         <div className="flex justify-between items-center mt-6">
-          <Link href="/forgot-password" legacyBehavior>
-            <a className="text-[#4e6bf5] hover:underline text-sm">
-              Forgot password?
-            </a>
+          <Link
+            href="/forgot-password"
+            className="text-[#4e6bf5] hover:underline text-sm"
+          >
+            Forgot password?
           </Link>
-          <Link href="/register" legacyBehavior>
-            <a className="text-[#4e6bf5] hover:underline text-sm">
-              Don't have an account? Sign up
-            </a>
+          <Link
+            href="/register"
+            className="text-[#4e6bf5] hover:underline text-sm"
+          >
+            Don't have an account? Sign up
           </Link>
         </div>
       </div>
