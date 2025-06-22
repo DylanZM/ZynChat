@@ -140,8 +140,8 @@ function LoginForm() {
             />
             <p className="text-xs text-neutral-400">
               By signing up or logging in, you consent to Zynchat's{" "}
-              <a href="#" className="underline">Terms of Use</a> and{" "}
-              <a href="#" className="underline">Privacy Policy</a>.
+              <Link href="/terms" className="underline hover:text-white">Terms of Use</Link> and{" "}
+              <Link href="/privacy" className="underline hover:text-white">Privacy Policy</Link>.
             </p>
             <Button
               type="submit"

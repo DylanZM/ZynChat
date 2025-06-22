@@ -552,17 +552,7 @@ export default function ChatPage() {
                 ))
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-neutral-400">
-                  <div className="p-6 bg-secondary rounded-2xl shadow-lg">
-                    <p className="text-base">
-                      This is the beginning of your conversation with
-                    </p>
-                    <p className="font-semibold text-white text-lg mt-1">
-                      {selectedContact?.name}.
-                    </p>
-                    <p className="mt-3 text-sm">
-                      Send a message to start chatting!
-                    </p>
-                  </div>
+                 
                 </div>
               )}
             </div>

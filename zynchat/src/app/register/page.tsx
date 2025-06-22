@@ -210,10 +210,10 @@ function RegisterForm() {
             <div className="flex gap-2">
               <div className="flex-1"></div>
             </div>
-            <p className="text-xs text-neutral-400">
-              By signing up, you consent to Zynchat's{" "}
-              <a href="#" className="underline">Terms of Use</a> and{" "}
-              <a href="#" className="underline">Privacy Policy</a>.
+            <p className="text-xs text-neutral-400 pt-2">
+              By creating an account, you agree to our{" "}
+              <a href="/terms" className="underline hover:text-white">Terms of Use</a> and{" "}
+              <a href="/privacy" className="underline hover:text-white">Privacy Policy</a>.
             </p>
             <Button type="submit" className="w-full bg-accent hover:bg-accent text-white font-semibold">
               Sign up
