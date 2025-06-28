@@ -45,44 +45,86 @@ function RegisterForm() {
   const { setUser } = useUser();
 
   async function onSubmit(values: any) {
-    const { data, error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        data: {
-          name: values.username,
-        },
-      },
-    });
+    try {
+      console.log("Intentando registro con:", { email: values.email, username: values.username });
+      
+      // Verificar si el username ya existe
+      const { data: existingUsers, error: checkError } = await supabase
+        .from("users")
+        .select("username")
+        .eq("username", values.username);
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    // Inserta en users si el usuario fue creado (sin importar la sesión)
-    if (data.user) {
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          id: data.user.id,
-          username: values.username,
-          email: values.email,
-          name: values.username,
-        },
-      ]);
-      if (insertError && !insertError.message.includes("duplicate key")) {
-        alert("Error guardando usuario en la base de datos: " + insertError.message);
+      if (checkError) {
+        console.error("Error verificando username:", checkError);
+        alert("Error verificando disponibilidad del username. Intenta nuevamente.");
         return;
       }
 
-      setUser({
-        id: data.user.id,
-        email: data.user.email ?? "",
-        name: data.user.user_metadata?.name || values.username,
+      if (existingUsers && existingUsers.length > 0) {
+        alert("Este nombre de usuario ya está en uso. Elige otro.");
+        return;
+      }
+
+      console.log("Username disponible, procediendo con registro...");
+
+      // Crear usuario en Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            name: values.username,
+            username: values.username,
+          },
+        },
       });
-      router.push("/chat");
-    } else {
-      alert("No se pudo crear el usuario.");
+
+      console.log("Resultado de signUp:", { data, error });
+
+      if (error) {
+        console.error("Error en signUp:", error);
+        alert(`Error en el registro: ${error.message}`);
+        return;
+      }
+
+      // Inserta en users si el usuario fue creado
+      if (data.user) {
+        console.log("Usuario creado en Auth, insertando en tabla users...");
+        
+        const { error: insertError } = await supabase.from("users").insert([
+          {
+            id: data.user.id,
+            username: values.username,
+            email: values.email,
+            name: values.username,
+          },
+        ]);
+
+        console.log("Resultado de inserción en users:", { insertError });
+
+        if (insertError) {
+          console.error("Error insertando en users:", insertError);
+          if (!insertError.message.includes("duplicate key")) {
+            alert("Error guardando usuario en la base de datos: " + insertError.message);
+            return;
+          }
+        }
+
+        setUser({
+          id: data.user.id,
+          email: data.user.email ?? "",
+          name: data.user.user_metadata?.name || values.username,
+        });
+
+        console.log("Registro exitoso, redirigiendo a /chat");
+        router.push("/chat");
+      } else {
+        console.error("No se pudo crear el usuario en Auth");
+        alert("No se pudo crear el usuario. Intenta nuevamente.");
+      }
+    } catch (error) {
+      console.error("Error inesperado durante el registro:", error);
+      alert("Error inesperado durante el registro. Intenta nuevamente.");
     }
   }
 

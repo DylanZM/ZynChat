@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { supabase } from "@/lib/supabase/supabase";
+import { supabase, checkSupabaseConnection } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Link from "next/link";
@@ -34,40 +34,70 @@ function LoginForm() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const router = useRouter();
   const { setUser } = useUser();
 
+
+
   async function onSubmit(values: any) {
-    // Buscar el usuario por username en la tabla users
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("id, email, username, name")
-      .eq("username", values.username)
-      .single();
+    try {
+      console.log("Intentando login con username:", values.username);
+      
+      // Buscar el usuario por username en la tabla users
+      const { data: users, error: userError } = await supabase
+        .from("users")
+        .select("id, email, username, name")
+        .eq("username", values.username);
 
-    if (userError || !user) {
-      alert("Usuario no encontrado.");
-      return;
+      console.log("Resultado de búsqueda de usuario:", { users, userError });
+
+      if (userError) {
+        console.error("Error al buscar usuario:", userError);
+        alert("Error al conectar con la base de datos. Intenta nuevamente.");
+        return;
+      }
+
+      if (!users || users.length === 0) {
+        alert("Usuario no encontrado. Verifica tu nombre de usuario.");
+        return;
+      }
+
+      const user = users[0];
+      console.log("Usuario encontrado:", user);
+
+      // Login con el email encontrado
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: values.password,
+      });
+
+      console.log("Resultado de login:", { loginData, loginError });
+
+      if (loginError) {
+        console.error("Error en login:", loginError);
+        alert("Credenciales incorrectas. Verifica tu contraseña.");
+        return;
+      }
+
+      if (!loginData.user) {
+        alert("Error en el proceso de autenticación.");
+        return;
+      }
+
+      setUser({
+        id: loginData.user.id,
+        email: loginData.user.email || "",
+        name: loginData.user.user_metadata?.name || user.name || user.username,
+      });
+
+      console.log("Login exitoso, redirigiendo a /chat");
+      router.push("/chat");
+      
+    } catch (error) {
+      console.error("Error inesperado durante el login:", error);
+      alert("Error inesperado. Intenta nuevamente.");
     }
-
-    // Login con el email encontrado
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: values.password,
-    });
-
-    if (loginError) {
-      alert("Credenciales incorrectas o usuario no registrado.");
-      return;
-    }
-
-    setUser({
-      id: loginData.user.id,
-      email: loginData.user.email || "",
-      name: loginData.user.user_metadata?.name || user.username,
-    });
-
-    router.push("/chat");
   }
 
   return (
@@ -83,6 +113,24 @@ function LoginForm() {
         <p className="mb-6 text-sm text-neutral-300">
           Login with your username and password.
         </p>
+        
+        {/* Indicador de estado de conexión */}
+        {isConnected === false && (
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+            <p className="text-red-400 text-sm">
+              ⚠️ Error de conexión con la base de datos. Verifica tu configuración.
+            </p>
+          </div>
+        )}
+        
+        {isConnected === true && (
+          <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
+            <p className="text-green-400 text-sm">
+              ✅ Conectado a la base de datos
+            </p>
+          </div>
+        )}
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField

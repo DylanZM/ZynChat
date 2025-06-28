@@ -5,11 +5,8 @@ import { Send, User2, Search, Plus, Camera, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/UserContext";
 import { Input } from "@/components/ui/input";
-import { io, Socket } from "socket.io-client";
 import { supabase } from "@/lib/supabase/supabase";
-
-// Change the URL if your backend is on another host/port
-const SOCKET_URL = "http://localhost:3001";
+import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 
 // Modal to add a contact by typing the exact name
 function AddContactModal({
@@ -163,6 +160,7 @@ type Message = {
   fromMe: boolean;
   text: string;
   time: string;
+  id?: string;
 };
 
 type MessagesByContact = {
@@ -182,16 +180,46 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const socketRef = useRef<Socket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [allMessages, selectedContact]);
 
   // Update online status on login/logout
   useEffect(() => {
     if (!user) return;
-    supabase.from("users").update({ is_online: true }).eq("id", user.id);
-    const onUnload = () => {
-      supabase.from("users").update({ is_online: false, last_seen: new Date().toISOString() }).eq("id", user.id);
+    
+    const updateOnlineStatus = async () => {
+      try {
+        await supabase.from("users").update({ is_online: true }).eq("id", user.id);
+        console.log("Usuario marcado como online");
+      } catch (error) {
+        console.error("Error actualizando estado online:", error);
+      }
     };
+
+    updateOnlineStatus();
+
+    const onUnload = async () => {
+      try {
+        await supabase.from("users").update({ 
+          is_online: false, 
+          last_seen: new Date().toISOString() 
+        }).eq("id", user.id);
+        console.log("Usuario marcado como offline");
+      } catch (error) {
+        console.error("Error actualizando estado offline:", error);
+      }
+    };
+
     window.addEventListener("beforeunload", onUnload);
     return () => {
       onUnload();
@@ -199,64 +227,69 @@ export default function ChatPage() {
     };
   }, [user]);
 
-  // Socket.IO connection
-  useEffect(() => {
-    if (!user) return;
-    const socket = io(SOCKET_URL, {
-      query: { userId: user.id }
-    });
-    socketRef.current = socket;
-
-    // Receive real-time messages
-    socket.on("receive_message", (msg: any) => {
-      setAllMessages((prev) => ({
-        ...prev,
-        [msg.senderId]: [
-          ...(prev[msg.senderId] || []),
-          { fromMe: false, text: msg.text, time: msg.time },
-        ],
-      }));
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [user]);
+  // Real-time subscription for messages
+  useRealtimeMessages(user?.id, setAllMessages);
 
   // Load real friends (with avatar and status)
   useEffect(() => {
     async function fetchFriends() {
       if (!user) return;
-      const { data, error } = await supabase
-        .from("friends")
-        .select("friend_id, friend:friend_id(name, email, avatar_url, is_online)")
-        .eq("user_id", user.id);
+      
+      try {
+        console.log("Cargando amigos del usuario:", user.id);
+        const { data, error } = await supabase
+          .from("friends")
+          .select("friend_id, friend:friend_id(name, email, avatar_url, is_online)")
+          .eq("user_id", user.id);
 
-      if (!error && data) {
-        const friends = data.map((f: any) => ({
-          id: f.friend_id,
-          name: f.friend?.name,
-          email: f.friend?.email,
-          avatar_url: f.friend?.avatar_url,
-          is_online: f.friend?.is_online,
-        }));
-        setContacts(friends);
-        if (!selectedContact && friends.length > 0) setSelectedContact(friends[0]);
+        if (error) {
+          console.error("Error cargando amigos:", error);
+          return;
+        }
+
+        if (data) {
+          const friends = data.map((f: any) => ({
+            id: f.friend_id,
+            name: f.friend?.name,
+            email: f.friend?.email,
+            avatar_url: f.friend?.avatar_url,
+            is_online: f.friend?.is_online,
+          }));
+          console.log("Amigos cargados:", friends);
+          setContacts(friends);
+          if (!selectedContact && friends.length > 0) setSelectedContact(friends[0]);
+        }
+      } catch (error) {
+        console.error("Error inesperado cargando amigos:", error);
       }
     }
     fetchFriends();
-    // eslint-disable-next-line
-  }, [user]);
+  }, [user, selectedContact]);
 
   // Load all users for search/add
   useEffect(() => {
     async function fetchAllUsers() {
       if (!user) return;
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, name, email")
-        .neq("id", user.id);
-      if (!error && data) setAllUsers(data);
+      
+      try {
+        console.log("Cargando todos los usuarios");
+        const { data, error } = await supabase
+          .from("users")
+          .select("id, name, email")
+          .neq("id", user.id);
+          
+        if (error) {
+          console.error("Error cargando usuarios:", error);
+          return;
+        }
+        
+        if (data) {
+          console.log("Usuarios cargados:", data);
+          setAllUsers(data);
+        }
+      } catch (error) {
+        console.error("Error inesperado cargando usuarios:", error);
+      }
     }
     fetchAllUsers();
   }, [user]);
@@ -265,26 +298,38 @@ export default function ChatPage() {
   useEffect(() => {
     async function fetchMessages() {
       if (!user || !selectedContact) return;
-      const { data, error } = await supabase
-        .from("messages")
-        .select("sender_id, receiver_id, content, created_at")
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.id}),and(sender_id.eq.${selectedContact.id},receiver_id.eq.${user.id})`)
-        .order("created_at", { ascending: true });
+      
+      try {
+        console.log("Cargando mensajes entre", user.id, "y", selectedContact.id);
+        const { data, error } = await supabase
+          .from("messages")
+          .select("id, sender_id, receiver_id, content, created_at")
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedContact.id}),and(sender_id.eq.${selectedContact.id},receiver_id.eq.${user.id})`)
+          .order("created_at", { ascending: true });
 
-      if (!error && data) {
-        const msgs: Message[] = data.map((msg: any) => ({
-          fromMe: msg.sender_id === user.id,
-          text: msg.content,
-          time: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }));
-        setAllMessages((prev) => ({
-          ...prev,
-          [selectedContact.id]: msgs,
-        }));
+        if (error) {
+          console.error("Error cargando mensajes:", error);
+          return;
+        }
+
+        if (data) {
+          const msgs: Message[] = data.map((msg: any) => ({
+            fromMe: msg.sender_id === user.id,
+            text: msg.content,
+            time: new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            id: msg.id
+          }));
+          console.log("Mensajes cargados:", msgs);
+          setAllMessages((prev) => ({
+            ...prev,
+            [selectedContact.id]: msgs,
+          }));
+        }
+      } catch (error) {
+        console.error("Error inesperado cargando mensajes:", error);
       }
     }
     fetchMessages();
-    // eslint-disable-next-line
   }, [user, selectedContact]);
 
   const filteredContacts = contacts.filter((contact) =>
@@ -295,38 +340,99 @@ export default function ChatPage() {
 
   const messages: Message[] = selectedContact ? allMessages[selectedContact.id] || [] : [];
 
-  // Send message using Socket.IO and save to Supabase
+  // Send message and save to Supabase
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || !user || !selectedContact) return;
+    if (!input.trim() || !user || !selectedContact || loading) return;
 
-    const msg = {
-      senderId: user.id,
-      receiverId: selectedContact.id,
-      text: input,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
+    setLoading(true);
+    const messageText = input.trim();
+    const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-    // Enviar por socket
-    socketRef.current?.emit("send_message", msg);
+    try {
+      console.log("=== INICIANDO ENVÍO DE MENSAJE ===");
+      console.log("Usuario actual:", user);
+      console.log("Contacto seleccionado:", selectedContact);
+      console.log("Texto del mensaje:", messageText);
 
-    // Guardar en Supabase
-    await supabase.from("messages").insert([
-      {
+      // Verificar autenticación
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error("Error de autenticación:", authError);
+        alert("Error de autenticación. Por favor, inicia sesión nuevamente.");
+        return;
+      }
+      
+      if (!authUser) {
+        console.error("Usuario no autenticado");
+        alert("Usuario no autenticado. Por favor, inicia sesión nuevamente.");
+        return;
+      }
+
+      console.log("Usuario autenticado:", authUser.id);
+      console.log("Verificando que auth.uid() coincide con user.id:", authUser.id === user.id);
+
+      const messageData = {
         sender_id: user.id,
         receiver_id: selectedContact.id,
-        content: input,
-      }
-    ]);
+        content: messageText,
+      };
 
-    setAllMessages((prev) => ({
-      ...prev,
-      [selectedContact.id]: [
-        ...(prev[selectedContact.id] || []),
-        { fromMe: true, text: input, time: msg.time },
-      ],
-    }));
-    setInput("");
+      console.log("Datos del mensaje a insertar:", messageData);
+
+      // Guardar en Supabase
+      const { data, error } = await supabase.from("messages").insert([messageData]).select();
+
+      if (error) {
+        console.error("=== ERROR GUARDANDO MENSAJE ===");
+        console.error("Error completo:", error);
+        console.error("Código de error:", error.code);
+        console.error("Mensaje de error:", error.message);
+        console.error("Detalles:", error.details);
+        console.error("Hint:", error.hint);
+        
+        if (error.code === '42501') {
+          alert("Error de permisos. Verifica las políticas RLS en Supabase.");
+        } else if (error.code === '23503') {
+          alert("Error de referencia. Verifica que los usuarios existan.");
+        } else {
+          alert(`Error enviando mensaje: ${error.message}`);
+        }
+        return;
+      }
+
+      if (data && data[0]) {
+        console.log("=== MENSAJE GUARDADO EXITOSAMENTE ===");
+        console.log("Mensaje guardado:", data[0]);
+        
+        // Agregar mensaje al estado local
+        setAllMessages((prev) => ({
+          ...prev,
+          [selectedContact.id]: [
+            ...(prev[selectedContact.id] || []),
+            { 
+              fromMe: true, 
+              text: messageText, 
+              time: currentTime,
+              id: data[0].id
+            },
+          ],
+        }));
+        
+        console.log("Mensaje agregado al estado local");
+      } else {
+        console.error("No se recibieron datos del mensaje insertado");
+      }
+
+      setInput("");
+      console.log("=== ENVÍO COMPLETADO ===");
+    } catch (error) {
+      console.error("=== ERROR INESPERADO ===");
+      console.error("Error completo:", error);
+      alert("Error inesperado enviando mensaje. Intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleLogout() {
@@ -338,24 +444,37 @@ export default function ChatPage() {
   // Add real friend (insert into friends table both ways)
   async function handleAddContact(newContact: { id: string; name: string }) {
     if (!user) return;
+    
     if (contacts.some(c => c.id === newContact.id)) {
       alert("This user is already your friend.");
       return;
     }
-    // Insert friendship both ways
-    const { error } = await supabase.from("friends").insert([
-      { user_id: user.id, friend_id: newContact.id },
-      { user_id: newContact.id, friend_id: user.id }
-    ]);
-    if (!error) {
+
+    try {
+      console.log("Agregando amigo:", newContact);
+      
+      // Insert friendship both ways
+      const { error } = await supabase.from("friends").insert([
+        { user_id: user.id, friend_id: newContact.id },
+        { user_id: newContact.id, friend_id: user.id }
+      ]);
+      
+      if (error) {
+        console.error("Error agregando amigo:", error);
+        alert("Error adding friend: " + error.message);
+        return;
+      }
+
+      console.log("Amigo agregado exitosamente");
       setContacts([newContact, ...contacts]);
       setAllMessages((prev) => ({
         ...prev,
         [newContact.id]: [],
       }));
       setSelectedContact(newContact);
-    } else {
-      alert("Error adding friend: " + error.message);
+    } catch (error) {
+      console.error("Error inesperado agregando amigo:", error);
+      alert("Error inesperado agregando amigo. Intenta nuevamente.");
     }
   }
 
@@ -363,41 +482,69 @@ export default function ChatPage() {
   async function handleUpdateUsername(newName: string) {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("users")
-      .update({ name: newName })
-      .eq("id", user.id)
-      .select()
-      .single();
+    try {
+      console.log("Actualizando nombre de usuario:", newName);
+      
+      const { data, error } = await supabase
+        .from("users")
+        .update({ name: newName })
+        .eq("id", user.id)
+        .select()
+        .single();
 
-    if (error) {
-      alert("Error updating name: " + error.message);
-    } else if (data) {
-      const updatedUser = { ...user, name: data.name };
-      setUser(updatedUser);
+      if (error) {
+        console.error("Error actualizando nombre:", error);
+        alert("Error updating name: " + error.message);
+        return;
+      }
+
+      if (data) {
+        console.log("Nombre actualizado exitosamente");
+        const updatedUser = { ...user, name: data.name };
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      console.error("Error inesperado actualizando nombre:", error);
+      alert("Error inesperado actualizando nombre. Intenta nuevamente.");
     }
   }
 
   // Change profile picture
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!user || !e.target.files || e.target.files.length === 0) return;
+    
     setAvatarUploading(true);
-    const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${user.id}/avatar.${fileExt}`;
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true });
-    if (uploadError) {
-      alert("Error uploading image");
+    
+    try {
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+      
+      console.log("Subiendo avatar:", filePath);
+      
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+        
+      if (uploadError) {
+        console.error("Error subiendo imagen:", uploadError);
+        alert("Error uploading image");
+        return;
+      }
+      
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const avatarUrl = data.publicUrl;
+      
+      await supabase.from("users").update({ avatar_url: avatarUrl }).eq("id", user.id);
+      setUser({ ...user, avatar_url: avatarUrl });
+      
+      console.log("Avatar actualizado exitosamente");
+    } catch (error) {
+      console.error("Error inesperado cambiando avatar:", error);
+      alert("Error inesperado cambiando avatar. Intenta nuevamente.");
+    } finally {
       setAvatarUploading(false);
-      return;
     }
-    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-    const avatarUrl = data.publicUrl;
-    await supabase.from("users").update({ avatar_url: avatarUrl }).eq("id", user.id);
-    setUser({ ...user, avatar_url: avatarUrl });
-    setAvatarUploading(false);
   }
 
   return (
@@ -533,26 +680,31 @@ export default function ChatPage() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-3 bg-primary">
               {messages.length > 0 ? (
-                messages.map((msg: Message, idx: number) => (
-                  <div
-                    key={idx}
-                    className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}
-                  >
+                <>
+                  {messages.map((msg: Message, idx: number) => (
                     <div
-                      className={`px-4 py-2 rounded-2xl max-w-xs ${
-                        msg.fromMe
-                          ? "bg-[#4f6ef7] text-white rounded-br-sm"
-                          : "bg-[#232323] text-neutral-200 rounded-bl-sm"
-                      }`}
+                      key={msg.id || idx}
+                      className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}
                     >
-                      <div>{msg.text}</div>
-                      <div className="text-xs text-right mt-1 opacity-60">{msg.time}</div>
+                      <div
+                        className={`px-4 py-2 rounded-2xl max-w-xs ${
+                          msg.fromMe
+                            ? "bg-[#4f6ef7] text-white rounded-br-sm"
+                            : "bg-[#232323] text-neutral-200 rounded-bl-sm"
+                        }`}
+                      >
+                        <div>{msg.text}</div>
+                        <div className="text-xs text-right mt-1 opacity-60">{msg.time}</div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-neutral-400">
-                 
+                  <div className="text-6xl mb-4">💬</div>
+                  <p className="text-lg font-medium mb-2">No messages yet</p>
+                  <p className="text-sm">Start a conversation with {selectedContact?.name || selectedContact?.email}</p>
                 </div>
               )}
             </div>
@@ -568,11 +720,13 @@ export default function ChatPage() {
                 placeholder="Type a message..."
                 className="flex-1 bg-primary text-white rounded-xl px-4 py-3 outline-none border-none"
                 autoComplete="off"
+                disabled={loading}
               />
               <Button
                 type="submit"
-                className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl p-3 transition-colors"
+                className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl p-3 transition-colors disabled:opacity-50"
                 aria-label="Send"
+                disabled={loading || !input.trim()}
               >
                 <Send size={20} />
               </Button>

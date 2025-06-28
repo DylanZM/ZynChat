@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Shield, Zap, Users, Lock, Smartphone, Star, ArrowRight, CheckCircle } from "lucide-react";
+import { MessageCircle, Shield, Zap, Users, Lock, Smartphone, Star, ArrowRight, CheckCircle, User2 } from "lucide-react";
 import Footer from "@/components/Footer";
 
 export default function HomePage() {
@@ -88,12 +88,11 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { icon: Shield, title: "End-to-End Encryption", text: "Your messages are encrypted before they leave your device. Not even we can read them.", color: "#4e6bf5"},
               { icon: Zap, title: "Lightning Fast", text: "Messages delivered instantly with our global network of servers.", color: "#34d399"},
-              { icon: Users, title: "Group Chats", text: "Create groups with up to 1000 members. Perfect for teams and communities.", color: "#a78bfa"},
               { icon: Smartphone, title: "Cross-Platform", text: "Available on all your devices. Sync seamlessly across web, mobile, and desktop.", color: "#f472b6"},
-              { icon: Lock, title: "Self-Destructing Messages", text: "Set messages to automatically delete after a specified time for ultimate privacy.", color: "#ef4444"},
-              { icon: Star, title: "Rich Media", text: "Share photos, videos, documents, and voice messages with ease.", color: "#f59e0b"}
+              { icon: User2, title: "Profile Customization", text: "Personalize your profile with your name and avatar.", color: "#a78bfa"},
+              { icon: Users, title: "Contact List", text: "Add and manage your contacts to chat with anyone you want.", color: "#4e6bf5"},
+              { icon: CheckCircle, title: "Online Status", text: "See who is online in real time.", color: "#f59e0b"},
             ].map((feature, index) => {
                 const Icon = feature.icon;
                 return (
