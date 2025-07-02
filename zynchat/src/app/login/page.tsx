@@ -86,9 +86,10 @@ function LoginForm() {
       }
 
       setUser({
-        id: loginData.user.id,
-        email: loginData.user.email || "",
-        name: loginData.user.user_metadata?.name || user.name || user.username,
+        id: user.id,
+        email: user.email,
+        name: user.name || user.username,
+        username: user.username,
       });
 
       console.log("Login exitoso, redirigiendo a /chat");
