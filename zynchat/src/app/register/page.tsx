@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
+import Image from "next/image";
 
 const formSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters." }),
@@ -130,13 +131,11 @@ function RegisterForm() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
-      <div className="flex items-center justify-center mt-16 mb-14 w-full">
-        <span className="flex items-center">
-          <span className="text-8xl font-bold text-[#4f6ef7]">
-            ZynChat
-          </span>
-        </span>
-      </div>
+   <div className="flex items-center justify-center mt-2 mb-4 w-full" style={{ minHeight: 100 }}>
+  
+    <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200} />
+  
+</div>
       <div className="w-full max-w-md rounded-xl bg-secondary p-8 shadow-lg">
         <p className="mb-6 text-sm text-white">
           Only email registration is supported in your region. One Zynchat account is all you need to access to all Zynchat services.

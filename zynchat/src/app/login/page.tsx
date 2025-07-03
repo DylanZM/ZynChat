@@ -18,6 +18,7 @@ import { supabase, checkSupabaseConnection } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Link from "next/link";
+import Image from "next/image";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "Username is required." }),
@@ -103,34 +104,17 @@ function LoginForm() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
-      <div className="flex items-center justify-center mt-16 mb-14 w-full">
-        <span className="flex items-center">
-          <span className="text-8xl font-bold text-[#4f6ef7]">
-            ZynChat
-          </span>
-        </span>
-      </div>
+<div className="flex items-center justify-center mt-2 mb-4 w-full" style={{ minHeight: 100 }}>
+
+    <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200} />
+  
+</div>
       <div className="w-full max-w-md rounded-xl bg-secondary p-8 shadow-lg">
         <p className="mb-6 text-sm text-neutral-300">
           Login with your username and password.
         </p>
         
-        {/* Indicador de estado de conexión */}
-        {isConnected === false && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-            <p className="text-red-400 text-sm">
-              ⚠️ Error de conexión con la base de datos. Verifica tu configuración.
-            </p>
-          </div>
-        )}
-        
-        {isConnected === true && (
-          <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
-            <p className="text-green-400 text-sm">
-              ✅ Conectado a la base de datos
-            </p>
-          </div>
-        )}
+
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
