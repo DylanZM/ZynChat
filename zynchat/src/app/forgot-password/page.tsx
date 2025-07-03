@@ -52,11 +52,12 @@ export default function ForgotPasswordPage() {
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
               <Input
-                        type="text"
-                        placeholder="Email"
-                        
-                        className="bg-[#1a1a1a] border border-[#525252] text-white pl-12 h-12 rounded-xl text-base focus:border-[#4e6bf5] focus:ring-2 focus:ring-[#4e6bf5]/60"
-                      />
+                type="text"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="bg-[#1a1a1a] border border-[#525252] text-white pl-12 h-12 rounded-xl text-base focus:border-[#4e6bf5] focus:ring-2 focus:ring-[#4e6bf5]/60"
+              />
             </div>
 
             {message && (
