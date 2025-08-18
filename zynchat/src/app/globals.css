@@ -1,52 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Libertinus+Sans:ital,wght@0,400;0,700;1,400&family=Noto+Sans+JP:wght@100..900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Negro azulado */
-  --primary: oklch(0.205 0 0);
-  /* Azul principal */
-  --secondary: oklch(0.97 0 0);
-  /* Gris oscuro */
-  --accent: oklch(0.97 0 0);
-  /* Azul claro */
-  --border: oklch(0.922 0 0);
-  /* Gris medio */
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --text-primary: #222222; /* Color por defecto para modo claro */
+  /* Main brand blue */
+  --color-blue-main: #4f6ef7;
+  --color-blue-main-hover: #3d56c5;
+  --color-blue-light: #6f8aff;
+  --color-blue-border: #4e6bf5;
+  --color-blue-badge: #4e6bf5;
+  --color-blue-badge-bg: #4e6bf51a;
 
-  /* Custom variables for text and dark background */
-  --color-text-white: #ffffff;   /* Pure white for main text */
-  --color-text-gray: #b0b3b8;    /* Light gray for secondary text */
-  --color-bg-dark: #1a1a1a;      /* Very dark gray for backgrounds or text */
+  /* Backgrounds */
+  --color-bg-primary: #181c2a;
+  --color-bg-secondary: #232b4a;
+  --color-bg-dark: #1a1a1a;
+  --color-bg-card: #232b4a;
+  --color-bg-card-light: #232b4acc;
+  --color-bg-gradient-from: #181c2a;
+  --color-bg-gradient-via: #232b4a;
+  --color-bg-gradient-to: #1a1d2b;
+
+  /* Text */
+  --color-text-white: #ffffff;
+  --color-text-gray: #b0b3b8;
+  --color-text-dark: #222222;
+  --color-text-blue: #4f6ef7;
+  --color-text-blue-light: #6f8aff;
+  --color-text-yellow: #facc15;
+  --color-text-neutral: #b0b3b8;
+
+  /* Border and accent */
+  --color-border: #4e6bf5;
+  --color-border-light: #4e6bf51a;
+  --color-border-white: #ffffff;
+  --color-border-gray: #b0b3b8;
+
+  /* Others */
+  --color-success: #34d399;
+  --color-pink: #f472b6;
+  --color-purple: #a78bfa;
+  --color-orange: #f59e0b;
+  --color-yellow: #facc15;
+  --color-green: #34d399;
+  --color-shadow: 0 4px 32px 0 #0000001a;
+
+  /* Radius */
+  --radius: 0.625rem;
+
+  /* Legacy/compatibility */
+  --primary: var(--color-bg-primary);
+  --secondary: var(--color-bg-secondary);
+  --accent: var(--color-blue-main);
+  --border: var(--color-border);
+  --background: var(--color-bg-primary);
+  --foreground: var(--color-text-white);
+  --card: var(--color-bg-card);
+  --card-foreground: var(--color-text-white);
+  --popover: var(--color-bg-card);
+  --popover-foreground: var(--color-text-white);
+  --primary-foreground: var(--color-text-white);
+  --secondary-foreground: var(--color-text-white);
+  --muted: var(--color-bg-secondary);
+  --muted-foreground: var(--color-text-gray);
+  --accent-foreground: var(--color-blue-main);
+  --destructive: #e11d48;
+  --input: var(--color-border-light);
+  --ring: var(--color-border);
+  --sidebar: var(--color-bg-secondary);
+  --sidebar-foreground: var(--color-text-white);
+  --sidebar-primary: var(--color-blue-main);
+  --sidebar-primary-foreground: var(--color-text-white);
+  --sidebar-accent: var(--color-blue-light);
+  --sidebar-accent-foreground: var(--color-text-white);
+  --sidebar-border: var(--color-border-light);
+  --sidebar-ring: var(--color-border);
+  --text-primary: var(--color-text-dark);
 }
 
 /* Override Tailwind's neutral-800 to #1a1a1a */

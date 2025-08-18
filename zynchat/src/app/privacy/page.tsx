@@ -1,55 +1,77 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ShieldCheck, UserCheck, Lock, Settings, ArrowLeftCircle } from 'lucide-react';
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-primary text-white">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-[#232b4a] to-[#1a1d2b] text-white flex flex-col justify-center items-center">
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto bg-secondary p-8 rounded-xl shadow-lg">
-          <h1 className="text-4xl font-bold text-[#4f6ef7] mb-6">
-            Privacy Policy
-          </h1>
-          <div className="prose prose-invert max-w-none text-neutral-300">
-            <p className="text-sm text-yellow-400 mb-4">
-              <strong>Disclaimer:</strong> This is a placeholder for your Privacy Policy. It is highly recommended to consult with a legal professional to draft your actual policy.
-            </p>
-
-            <p>Last updated: {new Date().toLocaleDateString()}</p>
-
-            <h2 className="text-white">1. Information We Collect</h2>
-            <p>
-              We collect information that you provide directly to us when you create an account, such as your name, email address, and username. We also collect information automatically when you use our services, including your IP address, device information, and usage data. Messages sent through ZynChat are stored to provide the chat history feature.
-            </p>
-
-            <h2 className="text-white">2. How We Use Your Information</h2>
-            <p>
-              We use the information we collect to operate, maintain, and provide you with the features and functionality of ZynChat. This includes:
-            </p>
-            <ul>
-              <li>Authenticating your account and processing transactions.</li>
-              <li>Personalizing your experience and delivering content relevant to you.</li>
-              <li>Communicating with you about service updates, offers, and promotions.</li>
-              <li>Monitoring and analyzing trends, usage, and activities in connection with our services.</li>
-            </ul>
-
-            <h2 className="text-white">3. How We Share Your Information</h2>
-            <p>
-              We do not share your personal information with third parties except as described in this Privacy Policy. We may share information with vendors, consultants, and other service providers who need access to such information to carry out work on our behalf.
-            </p>
-
-            <h2 className="text-white">4. Data Security</h2>
-            <p>
-              We use reasonable measures to help protect information about you from loss, theft, misuse and unauthorized access, disclosure, alteration, and destruction.
-            </p>
-            
-            <h2 className="text-white">5. Your Choices</h2>
-            <p>
-              You may update or correct your account information at any time by logging into your account. You may also disable your account, but please note that some information may remain in our archived records after your account has been disabled.
-            </p>
+        <div className="max-w-3xl mx-auto bg-secondary/80 p-10 rounded-3xl shadow-2xl border border-[#4f6ef7]/20 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 opacity-10 pointer-events-none select-none">
+            <ShieldCheck className="w-48 h-48 text-[#4f6ef7]" />
           </div>
-          <div className="mt-8 text-center">
-            <Link href="/register" className="text-[#4f6ef7] hover:underline">
-              Back to safety
+          <div className="flex items-center gap-3 mb-6">
+            <ShieldCheck className="w-10 h-10 text-[#4f6ef7]" />
+            <h1 className="text-4xl font-extrabold text-[#4f6ef7] tracking-tight drop-shadow-lg">Privacy Policy</h1>
+          </div>
+          <div className="prose prose-invert max-w-none text-neutral-200">
+            <p className="text-xs text-neutral-400 mb-6">Last updated: {new Date().toLocaleDateString()}</p>
+
+            <div className="space-y-8">
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <UserCheck className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">1. Information Collected</h2>
+                </div>
+                <p>
+                  This project is a personal learning exercise. Any information you provide (such as name, email, or username) is only used for demonstration and learning purposes. Some technical data (like IP or device info) may be collected for app functionality, but is not used commercially.
+                </p>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <Settings className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">2. How Your Information is Used</h2>
+                </div>
+                <p>This app uses your information only to provide basic chat features and to help me learn about web development. No data is sold or used for advertising.</p>
+                <ul className="list-disc pl-6">
+                  <li>Account authentication and basic functionality.</li>
+                  <li>Personalizing your experience for demonstration purposes.</li>
+                  <li>Learning and improving my coding skills.</li>
+                </ul>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <ArrowLeftCircle className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">3. Information Sharing</h2>
+                </div>
+                <p>Your information is not shared with third parties, except as needed for the app to function (e.g., hosting providers). No commercial use is made of your data.</p>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">4. Data Security</h2>
+                </div>
+                <p>Reasonable measures are taken to protect your information, but as this is a learning project, no guarantees can be made about data security.</p>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <UserCheck className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">5. Your Choices</h2>
+                </div>
+                <p>You can update or delete your information at any time. Since this is a demo, some data may remain in backups or logs for a short period.</p>
+              </section>
+            </div>
+          </div>
+          <div className="mt-10 text-center">
+            <Link href="/">
+              <Button
+                variant="outline"
+                className="text-white border border-white bg-[#232b4a]/80 hover:bg-[#4f6ef7] hover:text-white transition-colors px-8 py-2 text-base font-semibold shadow-md"
+              >
+                Back to Home
+              </Button>
             </Link>
+            <p className="text-xs text-neutral-400 mt-3">This is a personal project for learning purposes only.</p>
           </div>
         </div>
       </div>

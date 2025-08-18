@@ -16,6 +16,7 @@ import {
   ProfileModal,
 } from "@/components/chat";
 
+
 type Contact = {
   id: string;
   name: string;

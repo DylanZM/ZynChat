@@ -1,9 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Shield, Zap, Users, Lock, Smartphone, Star, ArrowRight, CheckCircle, User2 } from "lucide-react";
+import {  Shield, Zap, Users,  Smartphone,  ArrowRight, CheckCircle, User2 } from "lucide-react";
 import Footer from "@/components/Footer";
 
 export default function HomePage() {

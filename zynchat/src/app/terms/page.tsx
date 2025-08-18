@@ -1,57 +1,90 @@
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { FileText, Ban, User, Lock, Gavel } from 'lucide-react';
 
 export default function TermsOfUsePage() {
   return (
-    <div className="min-h-screen bg-primary text-white">
+    <div className="min-h-screen bg-gradient-to-br from-primary via-[#232b4a] to-[#1a1d2b] text-white flex flex-col justify-center items-center">
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto bg-secondary p-8 rounded-xl shadow-lg">
-          <h1 className="text-4xl font-bold text-[#4f6ef7] mb-6">
-            Terms of Use
-          </h1>
-          <div className="prose prose-invert max-w-none text-neutral-300">
-            <p className="text-sm text-yellow-400 mb-4">
-              <strong>Disclaimer:</strong> This is a placeholder for your Terms of Use. It is highly recommended to consult with a legal professional to draft your actual terms.
-            </p>
-            
-            <h2 className="text-white">1. Introduction</h2>
-            <p>
-              Welcome to ZynChat! These Terms of Use govern your use of our chat application and services. By using ZynChat, you agree to these terms in full. If you disagree with these terms or any part of these terms, you must not use our application.
-            </p>
-
-            <h2 className="text-white">2. Intellectual Property Rights</h2>
-            <p>
-              Other than the content you own, under these Terms, ZynChat and/or its licensors own all the intellectual property rights and materials contained in this application. You are granted a limited license only for purposes of viewing the material contained on this app.
-            </p>
-
-            <h2 className="text-white">3. Restrictions</h2>
-            <p>You are specifically restricted from all of the following:</p>
-            <ul>
-              <li>Publishing any application material in any other media;</li>
-              <li>Selling, sublicensing and/or otherwise commercializing any application material;</li>
-              <li>Publicly performing and/or showing any application material;</li>
-              <li>Using this application in any way that is or may be damaging to this application;</li>
-              <li>Using this application contrary to applicable laws and regulations, or in any way may cause harm to the application, or to any person or business entity;</li>
-            </ul>
-
-            <h2 className="text-white">4. Your Content</h2>
-            <p>
-              In these Terms of Use, "Your Content" shall mean any audio, video text, images or other material you choose to display on this application. By displaying Your Content, you grant ZynChat a non-exclusive, worldwide irrevocable, sub-licensable license to use, reproduce, adapt, publish, translate and distribute it in any and all media.
-            </p>
-
-            <h2 className="text-white">5. No warranties</h2>
-            <p>
-              This application is provided "as is," with all faults, and ZynChat expresses no representations or warranties, of any kind related to this application or the materials contained on this application.
-            </p>
-
-            <h2 className="text-white">6. Governing Law & Jurisdiction</h2>
-            <p>
-              These Terms will be governed by and interpreted in accordance with the laws of the State/Country of your choice, and you submit to the non-exclusive jurisdiction of the state and federal courts located in your choice for the resolution of any disputes.
-            </p>
+        <div className="max-w-3xl mx-auto bg-secondary/80 p-10 rounded-3xl shadow-2xl border border-[#4f6ef7]/20 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 opacity-10 pointer-events-none select-none">
+            <FileText className="w-48 h-48 text-[#4f6ef7]" />
           </div>
-          <div className="mt-8 text-center">
-            <Link href="/register" className="text-[#4f6ef7] hover:underline">
-              Back to safety
+          <div className="flex items-center gap-3 mb-6">
+            <FileText className="w-10 h-10 text-[#4f6ef7]" />
+            <h1 className="text-4xl font-extrabold text-[#4f6ef7] tracking-tight drop-shadow-lg">Terms & Conditions</h1>
+          </div>
+          <div className="prose prose-invert max-w-none text-neutral-200">
+            <div className="space-y-8">
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">1. Introduction</h2>
+                </div>
+                <p>
+                  This project (ZynChat) is a personal learning project created by an individual developer to practice and improve web development skills. By using this app, you acknowledge that it is not a commercial product and is provided for educational and demonstration purposes only.
+                </p>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">2. Intellectual Property</h2>
+                </div>
+                <p>
+                  All code and content in this app are owned by the project creator. You may view and use the app for learning, but you may not copy, redistribute, or use it for commercial purposes without permission.
+                </p>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <Ban className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">3. Restrictions</h2>
+                </div>
+                <p>You may not:</p>
+                <ul className="list-disc pl-6">
+                  <li>Use the app for illegal or harmful activities.</li>
+                  <li>Copy, sell, or redistribute the app or its content.</li>
+                  <li>Attempt to reverse engineer or exploit the app.</li>
+                </ul>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">4. User Content</h2>
+                </div>
+                <p>
+                  Any content you submit is for demonstration only and may be deleted at any time. The creator is not responsible for any loss of data.
+                </p>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">5. No Warranty</h2>
+                </div>
+                <p>
+                  This app is provided "as is" without any warranties. The creator is not liable for any issues or damages resulting from its use.
+                </p>
+              </section>
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <Gavel className="w-6 h-6 text-[#4f6ef7]" />
+                  <h2 className="text-2xl font-bold text-white">6. Governing Law</h2>
+                </div>
+                <p>
+                  These terms are governed by the laws of the creator's country. Any disputes will be resolved in accordance with those laws.
+                </p>
+              </section>
+            </div>
+          </div>
+          <div className="mt-10 text-center">
+            <Link href="/">
+              <Button
+                variant="outline"
+                className="text-white border border-white bg-[#232b4a]/80 hover:bg-[#4f6ef7] hover:text-white transition-colors px-8 py-2 text-base font-semibold shadow-md"
+              >
+                Back to Home
+              </Button>
             </Link>
+            <p className="text-xs text-neutral-400 mt-3">This is a personal project for learning purposes only.</p>
           </div>
         </div>
       </div>

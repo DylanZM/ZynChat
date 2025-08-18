@@ -133,7 +133,7 @@ function RegisterForm() {
     <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
    <div className="flex items-center justify-center mt-2 mb-4 w-full" style={{ minHeight: 100 }}>
   
-    <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200} />
+    <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200}  />
   
 </div>
       <div className="w-full max-w-md rounded-xl bg-secondary p-8 shadow-lg">

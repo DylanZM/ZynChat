@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 interface AddContactModalProps {
   open: boolean;
@@ -20,17 +22,20 @@ export function AddContactModal({
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const userFound = users.find(
-      (u) =>
-        u.name?.toLowerCase() === name.trim().toLowerCase() &&
-        !friends.some((f) => f.id === u.id)
-    );
     if (!name.trim()) {
-      setError("Name is required");
+      setError("El nombre es obligatorio");
       return;
     }
+    const userFound = users.find(
+      (u) => u.name?.toLowerCase() === name.trim().toLowerCase()
+    );
     if (!userFound) {
-      setError("A user with that name does not exist or is already your friend");
+      setError("Usuario no existe");
+      return;
+    }
+    const alreadyFriend = friends.some((f) => f.id === userFound.id);
+    if (alreadyFriend) {
+      setError("Ese usuario ya es tu amigo");
       return;
     }
     onAdd({ id: userFound.id, name: userFound.name });
@@ -42,36 +47,60 @@ export function AddContactModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-secondary rounded-xl p-8 min-w-[320px] flex flex-col items-center relative">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 transition-all duration-300">
+      <div className="bg-[#23243a] border border-[#353657] rounded-2xl px-6 py-8 min-w-[340px] flex flex-col items-center relative shadow-2xl animate-fadeIn">
         <button
-          className="absolute top-2 right-3 text-white text-2xl"
+          className="absolute top-3 right-4 text-[#bfc9ff] text-2xl hover:text-[#ff5e7e] transition-colors duration-200"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="Cerrar"
         >
-          ×
+          <span className="inline-block align-middle">×</span>
         </button>
-        <h2 className="text-white text-xl font-bold mb-4">Add Contact</h2>
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-3">
-          <input
+        <div className="flex flex-col items-center mb-4">
+          <div className="bg-[#353657] rounded-full p-3 mb-2 shadow-lg">
+            <svg width="32" height="32" fill="none" viewBox="0 0 24 24">
+              <circle cx="12" cy="8" r="4" fill="#4f6ef7"/>
+              <rect x="5" y="14" width="14" height="6" rx="3" fill="#4f6ef7" opacity="0.5"/>
+            </svg>
+          </div>
+          <h2 className="text-[#e4e8ff] text-2xl font-extrabold tracking-wide drop-shadow mb-1">
+            Añadir contacto
+          </h2>
+          <span className="text-[#bfc9ff] text-sm text-center">
+            Escribe el nombre del usuario 
+          </span>
+        </div>
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+          <Input
             type="text"
-            className="bg-primary text-white rounded-xl px-4 py-3 outline-none border border-[#232323]"
-            placeholder="Exact username"
+            className="bg-[#23243a] text-[#e4e8ff] rounded-xl px-4 py-3 border-2 border-[#353657] focus:border-[#4f6ef7] shadow-inner placeholder:text-[#bfc9ff]/60"
+            placeholder="Nombre exacto de usuario"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
           {error && (
-            <span className="text-red-400 text-sm mb-2">{error}</span>
+            <span className="text-[#ff5e7e] text-sm mb-2 text-center">{error}</span>
           )}
-          <button
+          <Button
             type="submit"
-            className="bg-[#4f6ef7] hover:bg-[#3d56c5] text-white rounded-xl py-2 font-semibold transition-colors"
+            className="bg-gradient-to-r from-[#4f6ef7] to-[#6a8cff] hover:from-[#3d56c5] hover:to-[#4f6ef7] text-white rounded-xl py-2 font-semibold shadow-lg"
           >
-            Add
-          </button>
+            Añadir
+          </Button>
         </form>
       </div>
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.96);}
+            to { opacity: 1; transform: scale(1);}
+          }
+          .animate-fadeIn {
+            animation: fadeIn 0.25s ease;
+          }
+        `}
+      </style>
     </div>
   );
-} 
+}
