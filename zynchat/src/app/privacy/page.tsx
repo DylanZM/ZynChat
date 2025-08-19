@@ -62,17 +62,7 @@ export default function PrivacyPolicyPage() {
               </section>
             </div>
           </div>
-          <div className="mt-10 text-center">
-            <Link href="/">
-              <Button
-                variant="outline"
-                className="text-white border border-white bg-[#232b4a]/80 hover:bg-[#4f6ef7] hover:text-white transition-colors px-8 py-2 text-base font-semibold shadow-md"
-              >
-                Back to Home
-              </Button>
-            </Link>
-            <p className="text-xs text-neutral-400 mt-3">This is a personal project for learning purposes only.</p>
-          </div>
+          
         </div>
       </div>
     </div>

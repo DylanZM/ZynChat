@@ -53,7 +53,6 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Debug user state on mount
   useEffect(() => {
     console.log("=== CHAT PAGE MOUNTED ===");
     console.log("User state:", user);

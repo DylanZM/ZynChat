@@ -40,8 +40,8 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold mb-4 text-white">Support</h3>
             <div className="space-y-2">
-              <Link href="/contact" className="block text-neutral-400 hover:text-white transition-colors">
-                Contact
+              <Link href="mailto:tu-correo@ejemplo.com" className="block text-neutral-400 hover:text-white transition-colors">
+                dylanzarzuela62@gmail.com
               </Link>
             </div>
           </div>

@@ -14,12 +14,12 @@ export default function TermsOfUsePage() {
             <FileText className="w-10 h-10 text-[#4f6ef7]" />
             <h1 className="text-4xl font-extrabold text-[#4f6ef7] tracking-tight drop-shadow-lg">Terms & Conditions</h1>
           </div>
-          <div className="prose prose-invert max-w-none text-neutral-200">
+          <div className="prose prose-invert max-w-none ">
             <div className="space-y-8">
               <section>
                 <div className="flex items-center gap-2 mb-2">
                   <User className="w-6 h-6 text-[#4f6ef7]" />
-                  <h2 className="text-2xl font-bold text-white">1. Introduction</h2>
+                  <h2 className="text-2xl font-bold ">1. Introduction</h2>
                 </div>
                 <p>
                   This project (ZynChat) is a personal learning project created by an individual developer to practice and improve web development skills. By using this app, you acknowledge that it is not a commercial product and is provided for educational and demonstration purposes only.
@@ -28,7 +28,7 @@ export default function TermsOfUsePage() {
               <section>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="w-6 h-6 text-[#4f6ef7]" />
-                  <h2 className="text-2xl font-bold text-white">2. Intellectual Property</h2>
+                  <h2 className="text-2xl font-bold">2. Intellectual Property</h2>
                 </div>
                 <p>
                   All code and content in this app are owned by the project creator. You may view and use the app for learning, but you may not copy, redistribute, or use it for commercial purposes without permission.
@@ -37,7 +37,7 @@ export default function TermsOfUsePage() {
               <section>
                 <div className="flex items-center gap-2 mb-2">
                   <Ban className="w-6 h-6 text-[#4f6ef7]" />
-                  <h2 className="text-2xl font-bold text-white">3. Restrictions</h2>
+                  <h2 className="text-2xl font-bold ">3. Restrictions</h2>
                 </div>
                 <p>You may not:</p>
                 <ul className="list-disc pl-6">
@@ -49,7 +49,7 @@ export default function TermsOfUsePage() {
               <section>
                 <div className="flex items-center gap-2 mb-2">
                   <User className="w-6 h-6 text-[#4f6ef7]" />
-                  <h2 className="text-2xl font-bold text-white">4. User Content</h2>
+                  <h2 className="text-2xl font-bold ">4. User Content</h2>
                 </div>
                 <p>
                   Any content you submit is for demonstration only and may be deleted at any time. The creator is not responsible for any loss of data.
@@ -58,7 +58,7 @@ export default function TermsOfUsePage() {
               <section>
                 <div className="flex items-center gap-2 mb-2">
                   <Lock className="w-6 h-6 text-[#4f6ef7]" />
-                  <h2 className="text-2xl font-bold text-white">5. No Warranty</h2>
+                  <h2 className="text-2xl font-bold">5. No Warranty</h2>
                 </div>
                 <p>
                   This app is provided "as is" without any warranties. The creator is not liable for any issues or damages resulting from its use.
@@ -67,7 +67,7 @@ export default function TermsOfUsePage() {
               <section>
                 <div className="flex items-center gap-2 mb-2">
                   <Gavel className="w-6 h-6 text-[#4f6ef7]" />
-                  <h2 className="text-2xl font-bold text-white">6. Governing Law</h2>
+                  <h2 className="text-2xl font-bold ">6. Governing Law</h2>
                 </div>
                 <p>
                   These terms are governed by the laws of the creator's country. Any disputes will be resolved in accordance with those laws.
@@ -75,17 +75,7 @@ export default function TermsOfUsePage() {
               </section>
             </div>
           </div>
-          <div className="mt-10 text-center">
-            <Link href="/">
-              <Button
-                variant="outline"
-                className="text-white border border-white bg-[#232b4a]/80 hover:bg-[#4f6ef7] hover:text-white transition-colors px-8 py-2 text-base font-semibold shadow-md"
-              >
-                Back to Home
-              </Button>
-            </Link>
-            <p className="text-xs text-neutral-400 mt-3">This is a personal project for learning purposes only.</p>
-          </div>
+        
         </div>
       </div>
     </div>
