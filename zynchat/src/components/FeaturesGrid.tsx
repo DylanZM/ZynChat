@@ -52,7 +52,7 @@ export default function FeaturesGrid() {
             return (
               <Card
                 key={index}
-                className="bg-secondary border-secondary hover:border-[#4e6bf5]/50 transition-all duration-300"
+                className="bg-transparent border border-neutral-800 hover:border-[#4e6bf5]/50 transition-all duration-300"
               >
                 <CardContent className="p-6">
                   <div

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function CTASection() {
   return (
@@ -11,17 +12,15 @@ export default function CTASection() {
           Join millions of users who trust ZynChat for their daily communications.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/register"
-            className="rounded-xl bg-[#4e6bf5] hover:bg-[#3d56c5] text-white font-semibold text-lg h-12 flex items-center justify-center transition-colors px-8"
-          >
-            Register Now
+          <Link href="/register">
+            <Button variant="hero-primary" className="text-lg h-12 px-8">
+              Register Now
+            </Button>
           </Link>
-          <Link
-            href="/login"
-            className="w-full sm:w-auto rounded-xl border border-[#4e6bf5] text-[#4e6bf5] hover:bg-[#4e6bf5]/10 font-semibold text-lg h-12 flex items-center justify-center transition-colors px-8"
-          >
-            Login
+          <Link href="/login">
+            <Button variant="hero-outline" className="text-lg h-12 px-8">
+              Login
+            </Button>
           </Link>
         </div>
       </div>

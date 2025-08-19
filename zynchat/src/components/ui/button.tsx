@@ -20,6 +20,11 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Nuevas variantes para botones tipo hero
+        "hero-primary":
+          "rounded-xl bg-[#4e6bf5] hover:bg-[#3d56c5] text-white font-semibold text-lg h-12 px-8",
+        "hero-outline":
+          "rounded-xl border border-[#4e6bf5] text-[#4e6bf5] hover:bg-[#4e6bf5]/10 font-semibold text-lg h-12 px-8",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

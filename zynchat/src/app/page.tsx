@@ -1,18 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
 import Footer from "@/components/Footer";
 import Hyperspeed from "@/animations/Hyperspeed/Hyperspeed";
 import HeroSection from "@/components/HeroSection";
 import FeaturesGrid from "@/components/FeaturesGrid";
 import SecuritySection from "@/components/SecuritySection";
 import CTASection from "@/components/CTASection";
+import Header from "@/components/Header";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-primary text-white relative overflow-hidden">
-      {/* Fondo animado */}
+    <div className="min-h-screen bg-primary relative overflow-hidden">
       <div
         className="fixed inset-0 w-full h-full z-0 pointer-events-none"
         style={{ minHeight: "100vh", minWidth: "100vw" }}
@@ -57,24 +55,13 @@ export default function HomePage() {
           }}
         />
       </div>
-      {/* Contenido principal */}
-      <div className="relative z-10">
-        {/* Navigation */}
-        <nav className="border-b border-secondary bg-primary/80 backdrop-blur-sm fixed w-full z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <Link href="/" className="flex items-center space-x-2">
-                <Image src="/img/ZynChat-Logo.png" alt="ZynChat Logo" width={125} height={125} />
-              </Link>
-            </div>
-          </div>
-        </nav>
 
+      <div className="relative z-10">
+        <Header />
         <HeroSection />
         <FeaturesGrid />
         <SecuritySection />
         <CTASection />
-
         <Footer />
       </div>
     </div>
