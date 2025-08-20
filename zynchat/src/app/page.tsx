@@ -7,9 +7,24 @@ import FeaturesGrid from "@/components/FeaturesGrid";
 import SecuritySection from "@/components/SecuritySection";
 import CTASection from "@/components/CTASection";
 import Header from "@/components/Header";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/supabase";
+
 
 
 export default function HomePage() {
+  const router = useRouter();
+
+useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.push("/chat");
+      }
+    });
+  }, [router]);
+
+
   return (
     <div className="min-h-screen bg-primary relative overflow-hidden">
       <div
