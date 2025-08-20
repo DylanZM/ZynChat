@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/supabase";
 
-const UserContext = createContext<any>(null);
+export const UserContext = createContext<any>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);

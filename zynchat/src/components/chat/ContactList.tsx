@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
 import { User2, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { UserContext } from "@/context/UserContext";
 
 interface Contact {
   id: string;
@@ -19,6 +20,7 @@ interface ContactListProps {
   onSearchChange: (value: string) => void;
   onContactSelect: (contact: Contact) => void;
   onAddContact: () => void;
+  setContacts: React.Dispatch<React.SetStateAction<Contact[]>>;
 }
 
 export function ContactList({
@@ -30,7 +32,10 @@ export function ContactList({
   onSearchChange,
   onContactSelect,
   onAddContact,
+  setContacts,
 }: ContactListProps) {
+  const { user } = useContext(UserContext);
+
   return (
     <aside
       className={`h-screen bg-secondary border-r border-[#232323] flex flex-col transition-all duration-300 ease-in-out ${
@@ -76,41 +81,45 @@ export function ContactList({
             <div className="text-neutral-400 text-center mt-8">No results</div>
           )}
           {filteredContacts.map((contact) => (
-            <button
+            <div
               key={contact.id}
-              onClick={() => onContactSelect(contact)}
               className={`w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-[#232323] transition-colors ${
                 selectedContact?.id === contact.id ? "bg-[#232323]" : ""
               }`}
             >
-              <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-10 h-10 flex items-center justify-center">
-                {contact.avatar_url ? (
-                  <img
-                    src={contact.avatar_url}
-                    alt={contact.name}
-                    className="w-8 h-8 rounded-full object-cover"
+              <button
+                onClick={() => onContactSelect(contact)}
+                className="flex items-center gap-3 flex-1 text-left"
+              >
+                <span className="relative bg-[#4f6ef7]/20 rounded-full p-2 w-10 h-10 flex items-center justify-center">
+                  {contact.avatar_url ? (
+                    <img
+                      src={contact.avatar_url}
+                      alt={contact.name}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User2 className="text-[#4f6ef7]" size={24} />
+                  )}
+                  <span
+                    className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
+                      contact.is_online ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                    title={contact.is_online ? "Online" : "Offline"}
                   />
-                ) : (
-                  <User2 className="text-[#4f6ef7]" size={24} />
-                )}
-                <span
-                  className={`absolute bottom-1 right-1 w-3 h-3 rounded-full border-2 border-secondary ${
-                    contact.is_online ? "bg-green-500" : "bg-gray-400"
-                  }`}
-                  title={contact.is_online ? "Online" : "Offline"}
-                />
-              </span>
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">
-                    {contact.name || contact.email}
-                  </span>
+                </span>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-medium">
+                      {contact.name || contact.email}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </div>
           ))}
         </div>
       </div>
     </aside>
   );
-} 
+}

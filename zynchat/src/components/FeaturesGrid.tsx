@@ -1,38 +1,17 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Zap, Smartphone, User2, Users, CheckCircle } from "lucide-react";
+import SpotlightCard from "@/animations/SpotlightCard/SpotlightCard";
+import { Zap, Smartphone, User2, Users, CheckCircle, Laptop } from "lucide-react";
+import features from "@/locales/Features.json";
 
-const FEATURES = [
-  {
-    icon: Zap,
-    title: "Lightning Fast",
-    text: "Messages delivered instantly with our global network of servers.",
-    color: "#34d399",
-  },
-  {
-    icon: Smartphone,
-    title: "Cross-Platform",
-    text: "Available on all your devices. Sync seamlessly across web, mobile, and desktop.",
-    color: "#f472b6",
-  },
-  {
-    icon: User2,
-    title: "Profile Customization",
-    text: "Personalize your profile with your name and avatar.",
-    color: "#a78bfa",
-  },
-  {
-    icon: Users,
-    title: "Contact List",
-    text: "Add and manage your contacts to chat with anyone you want.",
-    color: "#4e6bf5",
-  },
-  {
-    icon: CheckCircle,
-    title: "Online Status",
-    text: "See who is online in real time.",
-    color: "#f59e0b",
-  },
-];
+
+const ICONS: Record<string, React.ElementType> = {
+  Zap,
+  Smartphone,
+  User2,
+  Users,
+  CheckCircle,
+  Laptop
+};
+
 
 export default function FeaturesGrid() {
   return (
@@ -47,26 +26,28 @@ export default function FeaturesGrid() {
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {FEATURES.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <Card
-                key={index}
-                className="bg-transparent border border-neutral-800 hover:border-[#4e6bf5]/50 transition-all duration-300"
-              >
-                <CardContent className="p-6">
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
-                    style={{ backgroundColor: `${feature.color}1A` }}
-                  >
-                    <Icon className="w-6 h-6" style={{ color: feature.color }} />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2 text-white">{feature.title}</h3>
-                  <p className="text-neutral-300">{feature.text}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
+        {features.map((feature, index) => {
+  const Icon = ICONS[feature.icon];
+  return (
+    <SpotlightCard
+      key={index}
+      className="bg-transparent border-none"
+    >
+      <div
+        className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+        style={{ backgroundColor: "transparent" }}
+      >
+        {Icon ? (
+          <Icon className="w-6 h-6" style={{ color: feature.color }} />
+        ) : (
+          <span className="w-6 h-6" />
+        )}
+      </div>
+      <h3 className="text-xl font-semibold mb-2 ">{feature.title}</h3>
+      <p>{feature.text}</p>
+    </SpotlightCard>
+  );
+})}
         </div>
       </div>
     </section>

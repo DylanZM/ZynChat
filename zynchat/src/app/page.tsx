@@ -8,6 +8,7 @@ import SecuritySection from "@/components/SecuritySection";
 import CTASection from "@/components/CTASection";
 import Header from "@/components/Header";
 
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-primary relative overflow-hidden">

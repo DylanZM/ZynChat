@@ -1,0 +1,40 @@
+[
+  {
+    "icon": "Zap",
+    "title": "Lightning Fast",
+    "text": "Messages delivered instantly with our global network of servers.",
+    "color": "#34d399"
+  },
+  {
+    "icon": "Smartphone",
+    "title": "Cross-Platform",
+    "text": "Available on all your devices. Sync seamlessly across web, mobile, and desktop.",
+    "color": "#f472b6"
+  },
+  {
+    "icon": "User2",
+    "title": "Profile Customization",
+    "text": "Personalize your profile with your name and avatar.",
+    "color": "#a78bfa"
+  },
+  {
+    "icon": "Users",
+    "title": "Contact List",
+    "text": "Add and manage your contacts to chat with anyone you want.",
+    "color": "#4e6bf5"
+  },
+  {
+    "icon": "CheckCircle",
+    "title": "Online Status",
+    "text": "See who is online in real time.",
+    "color": "#f59e0b"
+  },
+  
+  {
+    "icon": "Laptop",
+    "title": "Attractive UI",
+    "text": "Enjoy a modern, intuitive, and visually appealing interface.",
+    "color": "#38bdf8"
+  }
+
+]

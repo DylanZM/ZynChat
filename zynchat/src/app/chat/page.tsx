@@ -597,6 +597,7 @@ export default function ChatPage() {
         onSearchChange={setSearch}
         onContactSelect={setSelectedContact}
         onAddContact={() => setShowAddContact(true)}
+        setContacts={setContacts}
       />
 
       {/* Main chat area */}

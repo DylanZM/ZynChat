@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { addFriend, friendshipExists} from "@/lib/supabase/funtions";
+import { UserContext } from "@/context/UserContext";
 
 interface AddContactModalProps {
   open: boolean;
@@ -19,30 +21,44 @@ export function AddContactModal({
 }: AddContactModalProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const { user } = useContext(UserContext);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError("El nombre es obligatorio");
-      return;
-    }
-    const userFound = users.find(
-      (u) => u.name?.toLowerCase() === name.trim().toLowerCase()
-    );
-    if (!userFound) {
-      setError("Usuario no existe");
-      return;
-    }
-    const alreadyFriend = friends.some((f) => f.id === userFound.id);
-    if (alreadyFriend) {
-      setError("Ese usuario ya es tu amigo");
-      return;
-    }
+async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  if (!name.trim()) {
+    setError("El nombre es obligatorio");
+    return;
+  }
+  const userFound = users.find(
+    (u) => u.name?.toLowerCase() === name.trim().toLowerCase()
+  );
+  if (!userFound) {
+    setError("Usuario no existe");
+    return;
+  }
+  if (!user?.id) {
+    setError("No hay usuario autenticado");
+    return;
+  }
+
+  // Chequea en la base de datos si ya existe la amistad
+  const exists = await friendshipExists(user.id, userFound.id);
+  if (exists) {
+    setError("Ese usuario ya es tu amigo");
+    return;
+  }
+
+  try {
+    await addFriend(user.id, userFound.id);
     onAdd({ id: userFound.id, name: userFound.name });
     setName("");
     setError("");
     onClose();
+  } catch (err: any) {
+    setError("Error al agregar amigo: " + (err?.message || ""));
   }
+}
+
 
   if (!open) return null;
 

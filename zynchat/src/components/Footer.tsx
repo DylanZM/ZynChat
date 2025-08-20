@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-secondary py-12 px-4 sm:px-6 lg:px-8">
+    <footer className=" py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-4 gap-8">
           <div>
@@ -13,7 +13,7 @@ export default function Footer() {
      
           </div>
           <div>
-            <h3 className="font-semibold mb-4 text-white">Product</h3>
+            <h3 className="font-semibold mb-4 ">Product</h3>
             <div className="space-y-2">
               <Link href="#features" className="block text-neutral-400 hover:text-white transition-colors">
                 Features
@@ -46,7 +46,7 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="border-t border-secondary mt-8 pt-8 text-center text-neutral-400">
+        <div className=" mt-8 pt-8 text-center text-neutral-400">
           <p>&copy; 2024 ZynChat. All rights reserved.</p>
         </div>
       </div>
