@@ -52,6 +52,36 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // --- FUNCIÓN GLOBAL PARA CARGAR AMIGOS ---
+  async function fetchFriends() {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("friends")
+        .select("friend_id, friend:friend_id(name, email, avatar_url, is_online)")
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error cargando amigos:", error);
+        return;
+      }
+
+      if (data) {
+        const friends = data.map((f: any) => ({
+          id: f.friend_id,
+          name: f.friend?.name,
+          email: f.friend?.email,
+          avatar_url: f.friend?.avatar_url,
+          is_online: f.friend?.is_online,
+        }));
+        setContacts(friends);
+      }
+    } catch (error) {
+      console.error("Error inesperado cargando amigos:", error);
+    }
+  }
+  // --- FIN FUNCIÓN ---
+
   useEffect(() => {
     console.log("=== CHAT PAGE MOUNTED ===");
     console.log("User state:", user);
@@ -105,40 +135,31 @@ export default function ChatPage() {
   // Real-time subscription for messages
   useRealtimeMessages(user?.id, setAllMessages);
 
-  // Load real friends (with avatar and status)
+  // --- CARGA AMIGOS AL ENTRAR O CAMBIAR CONTACTO ---
   useEffect(() => {
-    async function fetchFriends() {
-      if (!user) return;
-      
-      try {
-        console.log("Cargando amigos del usuario:", user.id);
-        const { data, error } = await supabase
-          .from("friends")
-          .select("friend_id, friend:friend_id(name, email, avatar_url, is_online)")
-          .eq("user_id", user.id);
-
-        if (error) {
-          console.error("Error cargando amigos:", error);
-          return;
-        }
-
-        if (data) {
-          const friends = data.map((f: any) => ({
-            id: f.friend_id,
-            name: f.friend?.name,
-            email: f.friend?.email,
-            avatar_url: f.friend?.avatar_url,
-            is_online: f.friend?.is_online,
-          }));
-          console.log("Amigos cargados:", friends);
-          setContacts(friends);
-        }
-      } catch (error) {
-        console.error("Error inesperado cargando amigos:", error);
-      }
-    }
     fetchFriends();
   }, [user, selectedContact]);
+
+  // --- SUSCRIPCIÓN REALTIME PARA ACTUALIZAR CONTACTOS ---
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('public:friends')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'friends', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          fetchFriends();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+  // --- FIN SUSCRIPCIÓN ---
 
   // Load all users for search/add
   useEffect(() => {
@@ -313,6 +334,7 @@ export default function ChatPage() {
         [newContact.id]: [],
       }));
       setSelectedContact(newContact);
+      setShowAddContact(false);
     } catch (error) {
       alert("Error inesperado agregando amigo. Intenta nuevamente.");
     }
