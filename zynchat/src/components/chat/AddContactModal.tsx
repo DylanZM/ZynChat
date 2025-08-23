@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { addFriend, friendshipExists} from "@/lib/supabase/funtions";
-import { UserContext } from "@/context/UserContext";
+import { UserContext } from "@/context/userContext";
 
 interface AddContactModalProps {
   open: boolean;
@@ -29,9 +29,15 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     setError("El nombre es obligatorio");
     return;
   }
-  const userFound = users.find(
-    (u) => u.name?.toLowerCase() === name.trim().toLowerCase()
+
+
+ const userFound = users.find(
+  (u) =>
+    u.name?.toLowerCase() === name.trim().toLowerCase() ||
+    u.username?.toLowerCase() === name.trim().toLowerCase() ||
+    u.email?.toLowerCase() === name.trim().toLowerCase()
   );
+  
   if (!userFound) {
     setError("Usuario no existe");
     return;

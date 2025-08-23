@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/context/UserContext";
+import { useUser } from "@/context/userContext";
 import Image from "next/image";
 
 const formSchema = z.object({
@@ -45,10 +45,10 @@ function RegisterForm() {
   const router = useRouter();
   const { setUser } = useUser();
 
+
+
   async function onSubmit(values: any) {
     try {
-      console.log("Intentando registro con:", { email: values.email, username: values.username });
-      
       // Verificar si el username ya existe
       const { data: existingUsers, error: checkError } = await supabase
         .from("users")
@@ -56,7 +56,6 @@ function RegisterForm() {
         .eq("username", values.username);
 
       if (checkError) {
-        console.error("Error verificando username:", checkError);
         alert("Error verificando disponibilidad del username. Intenta nuevamente.");
         return;
       }
@@ -65,8 +64,6 @@ function RegisterForm() {
         alert("Este nombre de usuario ya está en uso. Elige otro.");
         return;
       }
-
-      console.log("Username disponible, procediendo con registro...");
 
       // Crear usuario en Supabase Auth
       const { data, error } = await supabase.auth.signUp({
@@ -80,19 +77,14 @@ function RegisterForm() {
         },
       });
 
-      console.log("Resultado de signUp:", { data, error });
-
       if (error) {
-        console.error("Error en signUp:", error);
         alert(`Error en el registro: ${error.message}`);
         return;
       }
 
       // Inserta en users si el usuario fue creado
       if (data.user) {
-        console.log("Usuario creado en Auth, insertando en tabla users...");
-        
-        const { error: insertError } = await supabase.from("users").insert([
+        await supabase.from("users").insert([
           {
             id: data.user.id,
             username: values.username,
@@ -101,41 +93,26 @@ function RegisterForm() {
           },
         ]);
 
-        console.log("Resultado de inserción en users:", { insertError });
-
-        if (insertError) {
-          console.error("Error insertando en users:", insertError);
-          if (!insertError.message.includes("duplicate key")) {
-            alert("Error guardando usuario en la base de datos: " + insertError.message);
-            return;
-          }
-        }
-
         setUser({
           id: data.user.id,
           email: data.user.email ?? "",
           name: data.user.user_metadata?.name || values.username,
         });
 
-        console.log("Registro exitoso, redirigiendo a /chat");
         router.push("/chat");
       } else {
-        console.error("No se pudo crear el usuario en Auth");
         alert("No se pudo crear el usuario. Intenta nuevamente.");
       }
     } catch (error) {
-      console.error("Error inesperado durante el registro:", error);
       alert("Error inesperado durante el registro. Intenta nuevamente.");
     }
   }
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
-   <div className="flex items-center justify-center mt-2 mb-4 w-full" style={{ minHeight: 100 }}>
-  
-    <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200}  />
-  
-</div>
+      <div className="flex items-center justify-center mt-2 mb-4 w-full" style={{ minHeight: 100 }}>
+        <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200}  />
+      </div>
       <div className="w-full max-w-md rounded-xl bg-secondary p-8 shadow-lg">
         <p className="mb-6 text-sm text-white">
           Only email registration is supported in your region. One Zynchat account is all you need to access to all Zynchat services.

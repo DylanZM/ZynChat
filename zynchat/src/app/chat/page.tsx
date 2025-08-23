@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Menu } from "lucide-react";
-import { useUser } from "@/context/UserContext";
+import { useUser } from "@/context/userContext";
 import { supabase } from "@/lib/supabase/supabase";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import {
@@ -15,7 +15,6 @@ import {
   EditProfileModal,
   ProfileModal,
 } from "@/components/chat";
-
 
 type Contact = {
   id: string;
@@ -133,8 +132,6 @@ export default function ChatPage() {
           }));
           console.log("Amigos cargados:", friends);
           setContacts(friends);
-          // No seleccionar automáticamente ningún contacto
-          // if (!selectedContact && friends.length > 0) setSelectedContact(friends[0]);
         }
       } catch (error) {
         console.error("Error inesperado cargando amigos:", error);
@@ -227,27 +224,17 @@ export default function ChatPage() {
     const currentTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     try {
-      console.log("=== INICIANDO ENVÍO DE MENSAJE ===");
-      console.log("Usuario actual:", user);
-      console.log("Contacto seleccionado:", selectedContact);
-      console.log("Texto del mensaje:", messageText);
-
       // Verificar autenticación
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError) {
-        console.error("Error de autenticación:", authError);
         alert("Error de autenticación. Por favor, inicia sesión nuevamente.");
         return;
       }
       
       if (!authUser) {
-        console.error("Usuario no autenticado");
         alert("Usuario no autenticado. Por favor, inicia sesión nuevamente.");
         return;
       }
-
-      console.log("Usuario autenticado:", authUser.id);
-      console.log("Verificando que auth.uid() coincide con user.id:", authUser.id === user.id);
 
       const messageData = {
         sender_id: user.id,
@@ -255,34 +242,15 @@ export default function ChatPage() {
         content: messageText,
       };
 
-      console.log("Datos del mensaje a insertar:", messageData);
-
       // Guardar en Supabase
       const { data, error } = await supabase.from("messages").insert([messageData]).select();
 
       if (error) {
-        console.error("=== ERROR GUARDANDO MENSAJE ===");
-        console.error("Error completo:", error);
-        console.error("Código de error:", error.code);
-        console.error("Mensaje de error:", error.message);
-        console.error("Detalles:", error.details);
-        console.error("Hint:", error.hint);
-        
-        if (error.code === '42501') {
-          alert("Error de permisos. Verifica las políticas RLS en Supabase.");
-        } else if (error.code === '23503') {
-          alert("Error de referencia. Verifica que los usuarios existan.");
-        } else {
-          alert(`Error enviando mensaje: ${error.message}`);
-        }
+        alert(`Error enviando mensaje: ${error.message}`);
         return;
       }
 
       if (data && data[0]) {
-        console.log("=== MENSAJE GUARDADO EXITOSAMENTE ===");
-        console.log("Mensaje guardado:", data[0]);
-        
-        // Agregar mensaje al estado local
         setAllMessages((prev) => ({
           ...prev,
           [selectedContact.id]: [
@@ -295,27 +263,27 @@ export default function ChatPage() {
             },
           ],
         }));
-        
-        console.log("Mensaje agregado al estado local");
-      } else {
-        console.error("No se recibieron datos del mensaje insertado");
       }
 
       setInput("");
-      console.log("=== ENVÍO COMPLETADO ===");
     } catch (error) {
-      console.error("=== ERROR INESPERADO ===");
-      console.error("Error completo:", error);
       alert("Error inesperado enviando mensaje. Intenta nuevamente.");
     } finally {
       setLoading(false);
     }
   }
 
-  function handleLogout() {
-    supabase.from("users").update({ is_online: false, last_seen: new Date().toISOString() }).eq("id", user.id);
+  // CORREGIDO: Manejo seguro de logout
+  async function handleLogout() {
+    if (user && user.id) {
+      await supabase
+        .from("users")
+        .update({ is_online: false, last_seen: new Date().toISOString() })
+        .eq("id", user.id);
+    }
+    await supabase.auth.signOut();
     setUser(null);
-    window.location.href = "/login";
+    window.location.href = "/";
   }
 
   // Add real friend (insert into friends table both ways)
@@ -328,8 +296,6 @@ export default function ChatPage() {
     }
 
     try {
-      console.log("Agregando amigo:", newContact);
-      
       // Insert friendship both ways
       const { error } = await supabase.from("friends").insert([
         { user_id: user.id, friend_id: newContact.id },
@@ -337,12 +303,10 @@ export default function ChatPage() {
       ]);
       
       if (error) {
-        console.error("Error agregando amigo:", error);
         alert("Error adding friend: " + error.message);
         return;
       }
 
-      console.log("Amigo agregado exitosamente");
       setContacts([newContact, ...contacts]);
       setAllMessages((prev) => ({
         ...prev,
@@ -350,15 +314,12 @@ export default function ChatPage() {
       }));
       setSelectedContact(newContact);
     } catch (error) {
-      console.error("Error inesperado agregando amigo:", error);
       alert("Error inesperado agregando amigo. Intenta nuevamente.");
     }
   }
 
   // Simple test update
   async function testSimpleUpdate() {
-    console.log("=== TESTING SIMPLE UPDATE ===");
-    
     if (!user) {
       alert("No hay usuario");
       return;
@@ -370,8 +331,6 @@ export default function ChatPage() {
         .update({ name: "TEST_UPDATE_" + Date.now() })
         .eq("id", user.id)
         .select();
-      
-      console.log("Simple update result:", { data, error });
       
       if (error) {
         alert(`Error: ${error.message}\nCode: ${error.code}`);
@@ -386,8 +345,6 @@ export default function ChatPage() {
 
   // Test RLS policies
   async function testRLSPolicies() {
-    console.log("=== TESTING RLS POLICIES ===");
-    
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) {
       alert("No hay usuario autenticado");
@@ -400,8 +357,6 @@ export default function ChatPage() {
       .select("*")
       .eq("id", authUser.id);
     
-    console.log("SELECT test:", { selectData, selectError });
-    
     // Test UPDATE permission
     const { data: updateData, error: updateError } = await supabase
       .from("users")
@@ -409,17 +364,12 @@ export default function ChatPage() {
       .eq("id", authUser.id)
       .select();
     
-    console.log("UPDATE test:", { updateData, updateError });
-    
     // Test INSERT permission
     const { data: insertData, error: insertError } = await supabase
       .from("users")
       .insert([{ id: "test-id", name: "test", email: "test@test.com" }])
       .select();
     
-    console.log("INSERT test:", { insertData, insertError });
-    
-    // Show results
     let message = "RLS POLICY TEST RESULTS:\n\n";
     message += `SELECT: ${selectError ? 'FAILED' : 'SUCCESS'}\n`;
     message += `UPDATE: ${updateError ? 'FAILED' : 'SUCCESS'}\n`;
@@ -434,33 +384,19 @@ export default function ChatPage() {
 
   // Debug function to check database state
   async function debugDatabaseState() {
-    console.log("=== DEBUGGING DATABASE STATE ===");
-    
-    // Check auth user
     const { data: { user: authUser } } = await supabase.auth.getUser();
-    console.log("Auth user:", authUser);
     
     if (authUser) {
-      // Check users table
       const { data: usersData, error: usersError } = await supabase
         .from("users")
         .select("*")
         .eq("id", authUser.id);
       
-      console.log("Users table data:", { usersData, usersError });
-      
-      // Check all users
       const { data: allUsersData, error: allUsersError } = await supabase
         .from("users")
         .select("*");
-      
-      console.log("All users in table:", { allUsersData, allUsersError });
     }
     
-    console.log("Current user state:", user);
-    console.log("=== END DEBUG ===");
-    
-    // Show alert with key information
     let message = "DEBUG INFO:\n";
     message += `Auth User ID: ${authUser?.id || 'None'}\n`;
     message += `Context User ID: ${user?.id || 'None'}\n`;
@@ -484,65 +420,36 @@ export default function ChatPage() {
   // Update username
   async function handleUpdateUsername(newName: string) {
     if (!user) {
-      console.error("No hay usuario autenticado");
       alert("No hay usuario autenticado");
       return;
     }
 
     try {
-      console.log("=== INICIANDO ACTUALIZACIÓN DE NOMBRE ===");
-      console.log("Usuario actual:", user);
-      console.log("Nuevo nombre:", newName);
-      console.log("ID del usuario:", user.id);
-      
-      // Verificar autenticación primero
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError) {
-        console.error("Error de autenticación:", authError);
         alert("Error de autenticación. Por favor, inicia sesión nuevamente.");
         return;
       }
       
-      console.log("Usuario autenticado:", authUser);
-      
-      // Intentar actualización directa
       const { data, error } = await supabase
         .from("users")
         .update({ name: newName })
         .eq("id", user.id)
         .select();
 
-      console.log("Resultado de actualización:", { data, error });
-
       if (error) {
-        console.error("Error completo:", error);
-        console.error("Código de error:", error.code);
-        console.error("Mensaje de error:", error.message);
-        console.error("Detalles:", error.details);
-        console.error("Hint:", error.hint);
-        
-        if (error.code === '42501') {
-          alert("Error de permisos RLS. El usuario no tiene permisos para actualizar su perfil.");
-        } else if (error.code === '23503') {
-          alert("Error de referencia. Verifica que el usuario exista.");
-        } else {
-          alert(`Error actualizando nombre: ${error.message}\nCódigo: ${error.code}`);
-        }
+        alert(`Error actualizando nombre: ${error.message}\nCódigo: ${error.code}`);
         return;
       }
 
       if (data && data.length > 0) {
-        console.log("Nombre actualizado exitosamente");
         const updatedUser = { ...user, name: data[0].name };
         setUser(updatedUser);
-        console.log("=== ACTUALIZACIÓN COMPLETADA ===");
         alert("Nombre actualizado exitosamente!");
       } else {
-        console.error("No se encontró el usuario para actualizar después de la actualización");
         alert("User not found for update");
       }
     } catch (error) {
-      console.error("Error inesperado actualizando nombre:", error);
       alert("Error inesperado actualizando nombre. Intenta nuevamente.");
     }
   }
@@ -558,14 +465,11 @@ export default function ChatPage() {
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
       
-      console.log("Subiendo avatar:", filePath);
-      
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file, { upsert: true });
         
       if (uploadError) {
-        console.error("Error subiendo imagen:", uploadError);
         alert("Error uploading image");
         return;
       }
@@ -575,10 +479,7 @@ export default function ChatPage() {
       
       await supabase.from("users").update({ avatar_url: avatarUrl }).eq("id", user.id);
       setUser({ ...user, avatar_url: avatarUrl });
-      
-      console.log("Avatar actualizado exitosamente");
     } catch (error) {
-      console.error("Error inesperado cambiando avatar:", error);
       alert("Error inesperado cambiando avatar. Intenta nuevamente.");
     } finally {
       setAvatarUploading(false);
@@ -651,20 +552,15 @@ export default function ChatPage() {
         )}
       </main>
 
-      {/* Modals */}
       <ProfileModal
         open={showProfile}
-        onClose={() => {
-          setShowProfile(false);
-          setShowEditProfile(false);
-        }}
+        onClose={() => setShowProfile(false)}
         onEditProfile={() => setShowEditProfile(true)}
         onLogout={handleLogout}
         onAvatarChange={handleAvatarChange}
         user={user}
         avatarUploading={avatarUploading}
       />
-
       <AddContactModal
         open={showAddContact}
         onClose={() => setShowAddContact(false)}

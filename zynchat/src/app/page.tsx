@@ -1,12 +1,12 @@
 "use client";
 
-import Footer from "@/components/Footer";
+import Footer from "@/components/footer";
 import Hyperspeed from "@/animations/Hyperspeed/Hyperspeed";
-import HeroSection from "@/components/HeroSection";
-import FeaturesGrid from "@/components/FeaturesGrid";
-import SecuritySection from "@/components/SecuritySection";
-import CTASection from "@/components/CTASection";
-import Header from "@/components/Header";
+import HeroSection from "@/components/heroSection";
+import FeaturesGrid from "@/components/featuresGrid";
+import SecuritySection from "@/components/securitySection";
+import CTASection from "@/components/ctaSection";
+import Header from "@/components/header";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/supabase";

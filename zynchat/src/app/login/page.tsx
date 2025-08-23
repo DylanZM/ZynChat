@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -14,9 +14,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { supabase, checkSupabaseConnection } from "@/lib/supabase/supabase";
+import { supabase } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/context/UserContext";
+import { useUser } from "@/context/userContext";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -35,26 +35,21 @@ function LoginForm() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const router = useRouter();
   const { setUser } = useUser();
 
-
-
   async function onSubmit(values: any) {
     try {
-      console.log("Intentando login con username:", values.username);
-      
-      // Buscar el usuario por username en la tabla users
+      // Buscar el usuario por username (insensible a mayúsculas/minúsculas)
       const { data: users, error: userError } = await supabase
         .from("users")
         .select("id, email, username, name")
-        .eq("username", values.username);
+        .ilike("username", values.username);
 
-      console.log("Resultado de búsqueda de usuario:", { users, userError });
+      // LOG para depuración
+      console.log("Resultado de búsqueda:", users, "Error:", userError);
 
       if (userError) {
-        console.error("Error al buscar usuario:", userError);
         alert("Error al conectar con la base de datos. Intenta nuevamente.");
         return;
       }
@@ -65,7 +60,8 @@ function LoginForm() {
       }
 
       const user = users[0];
-      console.log("Usuario encontrado:", user);
+      // Mostrar el email que se usará para login
+      console.log("Intentando login con email:", user.email);
 
       // Login con el email encontrado
       const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
@@ -73,11 +69,8 @@ function LoginForm() {
         password: values.password,
       });
 
-      console.log("Resultado de login:", { loginData, loginError });
-
       if (loginError) {
-        console.error("Error en login:", loginError);
-        alert("Credenciales incorrectas. Verifica tu contraseña.");
+        alert("Error de login: " + loginError.message);
         return;
       }
 
@@ -93,29 +86,22 @@ function LoginForm() {
         username: user.username,
       });
 
-      console.log("Login exitoso, redirigiendo a /chat");
       router.push("/chat");
       
     } catch (error) {
-      console.error("Error inesperado durante el login:", error);
       alert("Error inesperado. Intenta nuevamente.");
     }
   }
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-primary">
-<div className="flex items-center justify-center mt-2 mb-4 w-full" style={{ minHeight: 100 }}>
-
-    <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200} />
-  
-</div>
+      <div className="flex items-center justify-center mt-2 mb-4 w-full" style={{ minHeight: 100 }}>
+        <Image src="/img/ZynChat-Logo.png" alt="ZynChat" width={200} height={200} />
+      </div>
       <div className="w-full max-w-md rounded-xl bg-secondary p-8 shadow-lg">
         <p className="mb-6 text-sm text-neutral-300">
           Login with your username and password.
         </p>
-        
-
-        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField

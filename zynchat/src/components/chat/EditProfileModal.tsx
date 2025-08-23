@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface EditProfileModalProps {
   open: boolean;
@@ -13,9 +13,18 @@ export function EditProfileModal({
   onSave,
   currentUser,
 }: EditProfileModalProps) {
-  const [name, setName] = useState(currentUser?.name || "");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Actualiza el nombre cada vez que el modal se abre o cambia el usuario
+  useEffect(() => {
+    if (open && currentUser) {
+      setName(currentUser.name || "");
+      setError("");
+      setLoading(false);
+    }
+  }, [open, currentUser]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,14 +39,19 @@ export function EditProfileModal({
     onClose();
   }
 
-  if (!open) return null;
+  // No renderizar el modal si no hay usuario
+  if (!open || !currentUser) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
       <div className="bg-secondary rounded-xl p-8 min-w-[320px] flex flex-col items-center relative shadow-xl">
         <button
           className="absolute top-2 right-3 text-white/70 text-2xl hover:text-white"
-          onClick={onClose}
+          onClick={() => {
+            setError("");
+            setLoading(false);
+            onClose();
+          }}
           aria-label="Close"
         >
           ×
@@ -64,4 +78,4 @@ export function EditProfileModal({
       </div>
     </div>
   );
-} 
+}

@@ -25,12 +25,6 @@ export function ProfileModal({
 }: ProfileModalProps) {
   if (!open) return null;
 
-  if (uploadError) {
-    console.error("Error subiendo imagen:", uploadError, JSON.stringify(uploadError, null, 2));
-    alert("Error uploading image: " + (uploadError.message || JSON.stringify(uploadError)));
-    return;
-  }
-
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-secondary rounded-xl p-8 min-w-[320px] flex flex-col items-center relative">
@@ -61,8 +55,13 @@ export function ProfileModal({
             />
           </label>
         </div>
-        <h2 className="text-white text-xl font-bold mb-2">{user?.name}</h2>
-        <p className="text-neutral-400 text-sm mb-6">{user?.email}</p>
+        <h2 className="text-white text-xl font-bold mb-2">{user?.name || "Usuario"}</h2>
+        <p className="text-neutral-400 text-sm mb-6">{user?.email || ""}</p>
+        {uploadError && (
+          <div className="text-red-500 mb-2">
+            Error subiendo imagen: {uploadError.message || "Error desconocido"}
+          </div>
+        )}
         <div className="w-full space-y-3">
           <button
             onClick={onEditProfile}
@@ -81,4 +80,4 @@ export function ProfileModal({
       </div>
     </div>
   );
-} 
+}

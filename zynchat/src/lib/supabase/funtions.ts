@@ -12,9 +12,22 @@ function getFriendshipPair(userId: string, friendId: string) {
 }
 
 export async function addFriend(userId: string, friendId: string) {
-  const pair = getFriendshipPair(userId, friendId);
-  const { error } = await supabase.from('friends').insert(pair);
+  const { data, error } = await supabase
+    .from('friends')
+    .select('id')
+    .or(`and(user_id.eq.${userId},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${userId})`);
+
   if (error) throw error;
+  if (data && data.length > 0) {
+    return;
+  }
+
+  // Inserta la amistad en ambos sentidos
+  const { error: insertError } = await supabase.from('friends').insert([
+    { user_id: userId, friend_id: friendId },
+    { user_id: friendId, friend_id: userId }
+  ]);
+  if (insertError) throw insertError;
 }
 
 
