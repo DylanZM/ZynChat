@@ -307,38 +307,63 @@ export default function ChatPage() {
     window.location.href = "/";
   }
 
-  // Add real friend (insert into friends table both ways)
-  async function handleAddContact(newContact: { id: string; name: string }) {
-    if (!user) return;
-    
-    if (contacts.some(c => c.id === newContact.id)) {
-      alert("This user is already your friend.");
+async function handleAddContact(newContact: { id: string; name: string }) {
+  if (!user) return;
+
+  if (contacts.some(c => c.id === newContact.id)) {
+    alert("This user is already your friend.");
+    return;
+  }
+
+  try {
+    // Verifica si ya existe la relación en ambos sentidos
+    const { data: existing, error: selectError } = await supabase
+      .from("friends")
+      .select("user_id, friend_id")
+      .or(
+        `and(user_id.eq.${user.id},friend_id.eq.${newContact.id}),and(user_id.eq.${newContact.id},friend_id.eq.${user.id})`
+      );
+
+    if (selectError) {
+      alert("Error comprobando amistad: " + selectError.message);
       return;
     }
 
-    try {
-      // Insert friendship both ways
-      const { error } = await supabase.from("friends").insert([
-        { user_id: user.id, friend_id: newContact.id },
-        { user_id: newContact.id, friend_id: user.id }
-      ]);
-      
-      if (error) {
-        alert("Error adding friend: " + error.message);
-        return;
-      }
-
-      setContacts([newContact, ...contacts]);
-      setAllMessages((prev) => ({
-        ...prev,
-        [newContact.id]: [],
-      }));
-      setSelectedContact(newContact);
-      setShowAddContact(false);
-    } catch (error) {
-      alert("Error inesperado agregando amigo. Intenta nuevamente.");
+    // Prepara solo las filas que no existen
+    const inserts = [];
+    if (!existing?.some((r: any) => r.user_id === user.id && r.friend_id === newContact.id)) {
+      inserts.push({ user_id: user.id, friend_id: newContact.id });
     }
+    if (!existing?.some((r: any) => r.user_id === newContact.id && r.friend_id === user.id)) {
+      inserts.push({ user_id: newContact.id, friend_id: user.id });
+    }
+
+    if (inserts.length === 0) {
+      alert("Ya son amigos.");
+      return;
+    }
+
+    const { error } = await supabase.from("friends").insert(inserts);
+    if (error) {
+      // Solo muestra la alerta si el error NO es de clave duplicada
+      if (!error.message.includes("duplicate key value violates unique constraint")) {
+        alert("Error adding friend: " + error.message);
+      }
+      // Si es error de duplicado, simplemente no alertar nada
+      return;
+    }
+
+    setContacts([newContact, ...contacts]);
+    setAllMessages((prev) => ({
+      ...prev,
+      [newContact.id]: [],
+    }));
+    setSelectedContact(newContact);
+    setShowAddContact(false);
+  } catch (error) {
+    alert("Error inesperado agregando amigo. Intenta nuevamente.");
   }
+}
 
   // Simple test update
   async function testSimpleUpdate() {
