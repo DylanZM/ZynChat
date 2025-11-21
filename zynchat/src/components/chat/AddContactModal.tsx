@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { addFriend, friendshipExists} from "@/lib/supabase/funtions";
-import { UserContext } from "@/context/userContext";
+import { UserContext } from "@/context/UserContext";
 
 interface AddContactModalProps {
   open: boolean;

@@ -1,8 +1,8 @@
-export { NoContactSelected } from './noContactSelected';
-export { ChatHeader } from './chatHeader';
-export { MessageList } from './messageList';
-export { MessageInput } from './messageInput';
-export { ContactList } from './contactList';
-export { AddContactModal } from './addContactModal';
-export { EditProfileModal } from './editProfileModal';
-export { ProfileModal } from './profileModal'; 
+export { NoContactSelected } from './NoContactSelected';
+export { ChatHeader } from './ChatHeader';
+export { MessageList } from './MessageList';
+export { MessageInput } from './MessageInput';
+export { ContactList } from './ContactList';
+export { AddContactModal } from './AddContactModal';
+export { EditProfileModal } from './EditProfileModal';
+export { ProfileModal } from './ProfileModal'; 

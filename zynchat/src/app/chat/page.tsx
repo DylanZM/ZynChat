@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Menu } from "lucide-react";
-import { useUser } from "@/context/userContext";
+import { useUser } from "@/context/UserContext";
 import { supabase } from "@/lib/supabase/supabase";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import {
@@ -294,7 +294,7 @@ export default function ChatPage() {
     }
   }
 
-  // CORREGIDO: Manejo seguro de logout
+  //  Manejo seguro de logout
   async function handleLogout() {
     if (user && user.id) {
       await supabase

@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { User2, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { UserContext } from "@/context/userContext";
+import { UserContext } from "@/context/UserContext";
 
 interface Contact {
   id: string;

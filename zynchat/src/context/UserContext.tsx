@@ -28,7 +28,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Agrega este hook:
 export function useUser() {
   return useContext(UserContext);
 }

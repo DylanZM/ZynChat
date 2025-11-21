@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase/supabase";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/context/userContext";
+import { useUser } from "@/context/UserContext";
 import Link from "next/link";
 import Image from "next/image";
 

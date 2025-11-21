@@ -1,6 +1,4 @@
-/*
-	Installed from https://reactbits.dev/ts/tailwind/
-*/
+
 
 export const hyperspeedPresets = {
 	one: {
